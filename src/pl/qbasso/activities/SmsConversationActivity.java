@@ -7,17 +7,16 @@ import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.SmsDbHelper;
 import pl.qbasso.sms.SmsLengthWatcher;
-import pl.qbasso.sms.SmsSendHelper;
 import pl.qbasso.smssender.R;
-import android.content.BroadcastReceiver;
+import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.WindowManager;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -25,6 +24,8 @@ import android.widget.TextView;
 public class SmsConversationActivity extends FragmentActivity implements
 		ItemSeenListener {
 
+	private static final String EXTRA_CONVERSATION_NUMBER = "threadNumber";
+	public static final String EXTRA_CONVERSATION_LIST = "threadList";
 	private SmsThreadPageAdapter adapter;
 	private ViewPager viewPager;
 	private ConversationModel[] listInfo;
@@ -32,7 +33,6 @@ public class SmsConversationActivity extends FragmentActivity implements
 	private EditText smsInput;
 	private Button sendButton;
 	private TextView smsLength;
-	private BroadcastReceiver updateReceiver;
 	protected Context ctx;
 
 	private OnClickListener sendListener = new OnClickListener() {
@@ -41,7 +41,9 @@ public class SmsConversationActivity extends FragmentActivity implements
 			if (messageBody.length() > 0) {
 				int itemPos = viewPager.getCurrentItem();
 				((SmsConversation) adapter.getItem(itemPos)).sendText(
-						messageBody, 0, 0);
+						messageBody, 0);
+				InputMethodManager imm = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
+				imm.hideSoftInputFromWindow(smsInput.getWindowToken(), 0);
 			}
 		}
 	};
@@ -53,8 +55,9 @@ public class SmsConversationActivity extends FragmentActivity implements
 		ctx = this;
 		helper = new SmsDbHelper(getContentResolver());
 		setContentView(R.layout.thread_pager);
-		Object[] l = (Object[]) getIntent().getSerializableExtra("threadList");
-		pageNo = getIntent().getIntExtra("threadNumber", 0);
+		Object[] l = (Object[]) getIntent().getSerializableExtra(
+				EXTRA_CONVERSATION_LIST);
+		pageNo = getIntent().getIntExtra(EXTRA_CONVERSATION_NUMBER, 0);
 		listInfo = new ConversationModel[l.length];
 		int i = 0;
 		for (Object object : l) {
@@ -68,32 +71,9 @@ public class SmsConversationActivity extends FragmentActivity implements
 		sendButton = (Button) findViewById(R.id.sms_thread_sms_send_button);
 		sendButton.setOnClickListener(sendListener);
 		viewPager = (ViewPager) findViewById(R.id.content_pages);
-		adapter = new SmsThreadPageAdapter(this, listInfo, this);
+		adapter = new SmsThreadPageAdapter(this, listInfo, this, getIntent().getBooleanExtra("send_now", false));
 		viewPager.setAdapter(adapter);
 		viewPager.setCurrentItem(pageNo);
-		initReceivers();
-	}
-
-	private void initReceivers() {
-		if (updateReceiver == null) {
-			updateReceiver = new BroadcastReceiver() {
-				@Override
-				public void onReceive(Context context, Intent intent) {
-					if (intent.getAction().equals(SmsSendHelper.ACTION_UPDATE)) {
-//							SmsModel m = (SmsModel) intent
-//									.getSerializableExtra(SmsSendHelper.EXTRA_MESSAGE);
-//							ConversationModel cm = new ConversationModel(
-//									m.getThreadId(), 0, "");
-//							int adapterNumberToUpdate = findAdapterByThreadId(m.getThreadId());
-//							if (adapterNumberToUpdate >-1) {
-//								((SmsConversation)adapter.getItem(adapterNumberToUpdate)).update
-//							}							
-					}
-				}
-			};
-		}
-		registerReceiver(updateReceiver, new IntentFilter(
-				SmsSendHelper.ACTION_UPDATE));
 	}
 
 	protected int findAdapterByThreadId(long threadId) {
@@ -108,7 +88,6 @@ public class SmsConversationActivity extends FragmentActivity implements
 	@Override
 	public void onPause() {
 		super.onPause();
-		unregisterReceiver(updateReceiver);
 	}
 
 	public void onItemSeen(int adapterId, long messageId) {

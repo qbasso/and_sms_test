@@ -32,7 +32,7 @@
         <activity
             android:name="pl.qbasso.activities.SmsConversationActivity"
             android:configChanges="orientation|keyboardHidden"
-            android:windowSoftInputMode="stateAlwaysHidden" >
+            android:windowSoftInputMode="stateAlwaysHidden|adjustPan" >
         </activity>
 
         <receiver android:name="pl.qbasso.sms.SmsReceiver" >
@@ -50,6 +50,7 @@
                 <action android:name="pl.qbasso.RESEND" />
             </intent-filter>
         </receiver>
+        <service android:name="pl.qbasso.custom.SendTaskService"></service>
     </application>
 
 </manifest>

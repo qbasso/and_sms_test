@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import pl.qbasso.activities.SmsConversationActivity;
 import pl.qbasso.models.ConversationModel;
+import pl.qbasso.models.SmsModel;
 import pl.qbasso.smssender.R;
 import android.app.Activity;
 import android.app.Notification;
@@ -41,9 +42,11 @@ public class SmsReceiver extends BroadcastReceiver {
 					threadId = smsDb.getThreadIdForPhoneNumber(msg
 							.getOriginatingAddress());
 					body = msg.getMessageBody();
-					Uri u = smsDb.insertSmsToUri(SmsDbHelper.SMS_URI, sender,
-							body, "", System.currentTimeMillis(), false, false,
-							threadId);
+					SmsModel model = new SmsModel(0, threadId, sender, "",
+							System.currentTimeMillis(), body,
+							SmsModel.MESSAGE_TYPE_INBOX,
+							SmsModel.MESSAGE_NOT_READ, SmsModel.STATUS_COMPLETE);
+					Uri u = smsDb.insertSms(model);
 					if (threadId == -1) {
 						threadId = smsDb.getThreadIdForSmsUri(u);
 					}

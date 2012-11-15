@@ -25,13 +25,10 @@ public class CustomReceivers {
 				case Activity.RESULT_OK:
 					m.setSmsType(SmsModel.MESSAGE_TYPE_SENT);
 					if (m.getId() == 0) {
-						Uri u = smsAccessor.insertSmsToUri(
-								SmsDbHelper.SMS_OUTBOX_URI, m.getAddress(),
-								m.getBody(), "", System.currentTimeMillis(),
-								true, true, m.getThreadId());
+						Uri u = smsAccessor.insertSms(m);
 						m = smsAccessor.getSingleSms(u);
 					} else {
-						smsAccessor.updateSmsState(Uri.withAppendedPath(
+						smsAccessor.updateSmsType(Uri.withAppendedPath(
 								SmsDbHelper.SMS_URI, String.valueOf(intent
 										.getLongExtra(
 												SmsSendHelper.EXTRA_MESSAGE_ID,
@@ -49,10 +46,7 @@ public class CustomReceivers {
 				default:
 					m.setSmsType(SmsModel.MESSAGE_TYPE_FAILED);
 					if (m.getId() == 0) {
-						final Uri u = smsAccessor.insertSmsToUri(
-								SmsDbHelper.SMS_OUTBOX_URI, m.getAddress(),
-								m.getBody(), "", System.currentTimeMillis(),
-								true, true, m.getThreadId());
+						final Uri u = smsAccessor.insertSms(m);
 						m.setId(Long.parseLong(u.getPath()));
 						final SmsModel data = m;
 						mHandler.postDelayed(new Runnable() {
@@ -65,7 +59,7 @@ public class CustomReceivers {
 						}, 5000);
 						break;
 					} else {
-						smsAccessor.updateSmsState(Uri.withAppendedPath(
+						smsAccessor.updateSmsType(Uri.withAppendedPath(
 								SmsDbHelper.SMS_URI, String.valueOf(intent
 										.getLongExtra(
 												SmsSendHelper.EXTRA_MESSAGE_ID,
@@ -80,7 +74,7 @@ public class CustomReceivers {
 				m = (SmsModel) intent
 						.getSerializableExtra(SmsSendHelper.EXTRA_MESSAGE);
 				final SmsModel data = m;
-				h.sendText(arg0, data);
+				h.sendText(arg0, data, false);
 			}
 		}
 	}

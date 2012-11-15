@@ -25,7 +25,7 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 	private static final int RIGHT = 1;
 	private LeftItemHolder leftHolder;
 	private RightItemHolder rightHolder;
-	private String displyName;
+	private String displayName;
 	private ItemSeenListener onItemSeenListener;
 	private int id;
 	private Context context;
@@ -85,7 +85,7 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 				rightHolder = (RightItemHolder) v.getTag();
 			}
 			rightHolder.msgBody.setText(Html.fromHtml(getContext().getString(
-					R.string.message_body, displyName, item.getBody())));
+					R.string.message_body, displayName, item.getBody())));
 			rightHolder.msgDate.setText(Utils.formatDate(item.getDate()));
 			if (item.getStatus() == SmsModel.STATUS_WAITING) {
 				rightHolder.background.startAnimation(AnimationUtils
@@ -131,12 +131,16 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 		this.leftItemResource = leftItemResource;
 		this.rightItemResource = rightItemResource;
 		items = objects;
-		this.displyName = displayName;
+		this.displayName = displayName;
 		this.id = position;
 		this.context = context;
 	}
 
 	public void setOnItemSeenListener(ItemSeenListener listener) {
 		this.onItemSeenListener = listener;
+	}
+
+	public void setItems(List<SmsModel> items) {
+		this.items = items;
 	}
 }

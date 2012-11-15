@@ -25,31 +25,27 @@ public class SmsDbHelper {
 		this.resolver = r;
 	}
 
-	public void updateSmsState(Uri u, int smsState) {
+	public void updateSmsType(Uri u, int smsState) {
 		ContentValues values = new ContentValues();
 		values.put(SmsModel.TYPE, smsState);
 		resolver.update(u, values, null, null);
 	}
 
-	public Uri insertSmsToUri(Uri uri, String address, String body,
-			String subject, Long date, boolean read, boolean deliveryReport,
-			long threadId) {
+	public Uri insertSms(SmsModel m) {
 		ContentValues values = new ContentValues();
-		values.put(SmsModel.ADDRESS, address);
-		values.put(SmsModel.BODY, body);
-		values.put(SmsModel.SUBJECT, subject);
-		values.put(SmsModel.READ,
-				read ? Integer.valueOf(1) : Integer.valueOf(0));
-		if (date != null) {
-			values.put(SmsModel.DATE, date);
+		values.put(SmsModel.ADDRESS, m.getAddress());
+		values.put(SmsModel.BODY, m.getBody());
+		values.put(SmsModel.SUBJECT, "");
+		values.put(SmsModel.READ, m.getRead());
+		if (m.getDate() != 0) {
+			values.put(SmsModel.DATE, m.getDate());
 		}
-		if (threadId != -1) {
-			values.put(SmsModel.THREAD_ID, threadId);
+		if (m.getThreadId() != -1) {
+			values.put(SmsModel.THREAD_ID, m.getThreadId());
 		}
-		if (deliveryReport) {
-			values.put(SmsModel.STATUS, SmsModel.STATUS_PENDING);
-		}
-		return resolver.insert(uri, values);
+		values.put(SmsModel.TYPE, m.getSmsType());
+		values.put(SmsModel.STATUS, m.getStatus());
+		return resolver.insert(SMS_URI, values);
 	}
 
 	public long getThreadIdForSmsUri(Uri u) {
@@ -209,6 +205,12 @@ public class SmsDbHelper {
 		v.put(SmsModel.READ, messageRead);
 		result = resolver.update(u, v, null, null);
 		return result;
+	}
+
+	public void updateSmsStatus(Uri u, int smsStatus) {
+		ContentValues values = new ContentValues();
+		values.put(SmsModel.STATUS, smsStatus);
+		resolver.update(u, values, null, null);
 	}
 
 }
