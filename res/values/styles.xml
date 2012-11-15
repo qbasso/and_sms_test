@@ -1,0 +1,33 @@
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <style name="AppTheme" parent="android:Theme.Light.NoTitleBar"/>
+
+    <style name="AppFont">
+        <item name="android:textColor">#000000</item>
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="AppFont.Bold">
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+     <style name="AppFont.Small">
+        <item name="android:textSize">12sp</item>
+    </style>
+    
+     <style name="AppFont.Big">
+        <item name="android:textSize">18sp</item>
+    </style>
+    
+         <style name="bottom_anim">
+        <item name="@android:windowEnterAnimation">@anim/expand_from_bottom</item>
+        <item name="@android:windowExitAnimation">@anim/collapse_from_bottom</item>
+    </style>
+
+    <style name="top_anim">
+        <item name="@android:windowEnterAnimation">@anim/expand_from_top</item>
+        <item name="@android:windowExitAnimation">@anim/collapse_from_top</item>
+    </style>
+
+</resources>

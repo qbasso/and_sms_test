@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <android.support.v4.view.ViewPager
+        android:id="@+id/content_pages"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_above="@+id/sms_thread_send_bar"
+        android:layout_alignParentTop="true" >
+    </android.support.v4.view.ViewPager>
+
+    <LinearLayout
+        android:padding="8dp"
+        android:id="@+id/sms_thread_send_bar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:orientation="vertical" >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <EditText
+                android:id="@+id/sms_thread_sms_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:lines="3"
+                android:layout_weight="1"
+                android:imeOptions="actionSend"
+                android:gravity="top"
+                android:layout_marginRight="8dp"
+                android:layout_marginBottom="8dp"
+                android:inputType="textCapSentences|textLongMessage|textMultiLine" />
+
+            <Button
+                android:id="@+id/sms_thread_sms_send_button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:layout_weight="2"
+                android:text="Send" />
+        </LinearLayout>
+
+        <TextView
+            style="@style/AppFont"
+            android:id="@+id/sms_thread_sms_length"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center" />
+    </LinearLayout>
+
+</RelativeLayout>
