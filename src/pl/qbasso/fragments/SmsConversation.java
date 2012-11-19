@@ -9,6 +9,7 @@ import pl.qbasso.custom.SmsAdapter;
 import pl.qbasso.interfaces.ActionClickListener;
 import pl.qbasso.interfaces.ItemSeenListener;
 import pl.qbasso.interfaces.OnMessageSendCompleteListener;
+import pl.qbasso.interfaces.SmsDraftAvailableListener;
 import pl.qbasso.models.ActionModel;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
@@ -21,7 +22,6 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.inputmethodservice.InputMethodService;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -33,7 +33,6 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnLongClickListener;
-import android.view.inputmethod.InputMethodManager;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -62,29 +61,11 @@ public class SmsConversation extends Fragment {
 	private SmsSendHelper helper;
 	private SmsModel sendingNow;
 	private String clientId;
-	private Messenger messenger;
-	private Messenger mService;
 	protected ItemSeenListener itemSeenListener;
 	private OnLongClickListener itemLongClickListener;
-
-	public SmsConversation() {
-	}
-
-	private Handler smsThreadHandler = new Handler();
-
-	private Handler incomingHandler = new Handler() {
-		@Override
-		public void handleMessage(Message m) {
-			switch (m.what) {
-			case SendTaskService.COMPLETE_MESSAGE:
-			case SendTaskService.CANCEL_MESSAGE:
-				updateItems();
-				break;
-			default:
-				break;
-			}
-		}
-	};
+	private SmsDraftAvailableListener draftAvailableListener;
+	private Messenger messenger;
+	private Messenger mService;
 
 	private ServiceConnection connection = new ServiceConnection() {
 		public void onServiceDisconnected(ComponentName name) {
@@ -106,6 +87,37 @@ public class SmsConversation extends Fragment {
 		}
 	};
 
+	private Handler smsThreadHandler = new Handler();
+
+	private Handler incomingHandler = new Handler() {
+		@Override
+		public void handleMessage(Message m) {
+			switch (m.what) {
+			case SendTaskService.COMPLETE_MESSAGE:
+				SmsModel smsModel = (SmsModel) m.getData().getSerializable(
+						SmsSendHelper.EXTRA_MESSAGE);
+				int pos = m.getData().getInt(EXTRA_ADAPTER_POSITION);
+				items.remove(pos);
+				items.add(pos, smsModel);
+				updateItems(false);
+				break;
+			case SendTaskService.CANCEL_MESSAGE:
+				updateItems(true);
+				SmsModel sm = (SmsModel) m.getData().getSerializable(
+						SmsSendHelper.EXTRA_MESSAGE);
+				draftAvailableListener.draftTextAvailable(sm.getBody(),
+						position);
+				if (items.size() == 0) {
+					smsAccessor.deleteThread(info.getThreadId());
+					act.finish();
+				}
+				break;
+			default:
+				break;
+			}
+		}
+	};
+
 	public void sendText(final String messageBody, int delay) {
 		smsThreadHandler.postDelayed(new Runnable() {
 			public void run() {
@@ -113,7 +125,7 @@ public class SmsConversation extends Fragment {
 						.getAddress(), "", System.currentTimeMillis(),
 						messageBody, SmsModel.MESSAGE_TYPE_SENT,
 						SmsModel.MESSAGE_READ, SmsModel.STATUS_WAITING);
-				Uri u = smsAccessor.insertSms(m);
+				Uri u = smsAccessor.insertSms(SmsDbHelper.SMS_URI, m);
 				m.setAddressDisplayName(info.getDisplayName());
 				m.setId(Long.parseLong(u.getLastPathSegment()));
 				sendingNow = m;
@@ -140,7 +152,7 @@ public class SmsConversation extends Fragment {
 		public void onItemClick(int pos, Bundle b) {
 			switch (pos) {
 			case ACTION_DELETE_MESSAGE:
-				smsAccessor.deleteSms(b.getLong(EXTRA_MESSAGE_ID));
+				smsAccessor.deleteSms(SmsDbHelper.SMS_URI, b.getLong(EXTRA_MESSAGE_ID));
 				items.remove(b.getInt(EXTRA_ADAPTER_POSITION));
 				if (items.size() == 0) {
 					ConversationList.NEED_REFRESH = true;
@@ -209,7 +221,6 @@ public class SmsConversation extends Fragment {
 		public void messageSendComplete(boolean success) {
 			if (success) {
 				items.add(0, sendingNow);
-				act.starts
 				adapter.notifyDataSetChanged();
 				ConversationList.NEED_REFRESH = true;
 			}
@@ -235,10 +246,13 @@ public class SmsConversation extends Fragment {
 		smsList.setOnLongClickListener(itemLongClickListener);
 		info = (ConversationModel) getArguments().getSerializable(
 				EXTRA_CONVERSATION_INFO);
+
 	}
 
-	private void updateItems() {
-		items = smsAccessor.getSmsForThread(info.getThreadId());
+	private void updateItems(boolean b) {
+		if (b) {
+			items = smsAccessor.getSmsForThread(info.getThreadId());
+		}
 		adapter = new SmsAdapter(act, R.layout.left_sms_item,
 				R.layout.right_sms_item, items, info.getDisplayName(), position);
 		adapter.setOnItemSeenListener(itemSeenListener);
@@ -248,12 +262,14 @@ public class SmsConversation extends Fragment {
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		act.starts
 		act.bindService(new Intent(act, SendTaskService.class), connection,
-				Context.);
+				Context.BIND_AUTO_CREATE);		
+		if (info.isDraft()) {
+			draftAvailableListener.draftTextAvailable(info.getSnippet(), position);
+		}
 		smsThreadHandler.post(new Runnable() {
 			public void run() {
-				updateItems();
+				updateItems(true);
 				bar.setVisibility(View.GONE);
 				smsList.setVisibility(View.VISIBLE);
 				if (getArguments().getBoolean("send_now")) {
@@ -272,8 +288,6 @@ public class SmsConversation extends Fragment {
 		message.setData(b);
 		try {
 			mService.send(message);
-			items.add(0, smsModel);
-			adapter.notifyDataSetChanged();
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
@@ -307,6 +321,15 @@ public class SmsConversation extends Fragment {
 
 	public void setItemSeenListener(ItemSeenListener itemSeenListener) {
 		this.itemSeenListener = itemSeenListener;
+	}
+
+	public SmsDraftAvailableListener getDraftAvailableListener() {
+		return draftAvailableListener;
+	}
+
+	public void setDraftAvailableListener(
+			SmsDraftAvailableListener draftAvailableListener) {
+		this.draftAvailableListener = draftAvailableListener;
 	}
 
 }

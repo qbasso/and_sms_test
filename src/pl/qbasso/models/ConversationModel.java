@@ -17,12 +17,12 @@ public class ConversationModel implements Serializable {
 	private String address;
 	private String displayName;
 	private int unread = 0;
+	private boolean draft = false;
 
 	public ConversationModel(long threadId, int count, String snippet) {
 		this.threadId = threadId;
 		this.snippet = snippet;
 		this.count = count;
-		// TODO Auto-generated constructor stub
 	}
 
 	public long getThreadId() {
@@ -71,5 +71,13 @@ public class ConversationModel implements Serializable {
 
 	public void setUnread(int unread) {
 		this.unread = unread;
+	}
+
+	public boolean isDraft() {
+		return draft;
+	}
+
+	public void setDraft(boolean draft) {
+		this.draft = draft;
 	}
 }

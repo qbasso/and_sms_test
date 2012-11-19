@@ -2,6 +2,7 @@ package pl.qbasso.custom;
 
 import pl.qbasso.fragments.SmsConversation;
 import pl.qbasso.interfaces.ItemSeenListener;
+import pl.qbasso.interfaces.SmsDraftAvailableListener;
 import pl.qbasso.models.ConversationModel;
 import android.content.Context;
 import android.os.Bundle;
@@ -24,15 +25,18 @@ public class SmsThreadPageAdapter extends FragmentPagerAdapter {
 	private SparseArray<Fragment> instantiatedFragments = new SparseArray<Fragment>();
 	private ConversationModel[] items;
 	private ItemSeenListener listener;
+	private SmsDraftAvailableListener draftAvailableListener;
 	private Context context;
 	private boolean send;
 
 	public SmsThreadPageAdapter(FragmentActivity act,
 			ConversationModel[] converstaionModels,
-			ItemSeenListener itemSeenListener, boolean b) {
+			ItemSeenListener itemSeenListener,
+			SmsDraftAvailableListener draftAvailableListener, boolean b) {
 		super(act.getSupportFragmentManager());
 		this.items = converstaionModels;
 		this.listener = itemSeenListener;
+		this.draftAvailableListener = draftAvailableListener;
 		this.context = act;
 		send = b;
 	}
@@ -46,8 +50,12 @@ public class SmsThreadPageAdapter extends FragmentPagerAdapter {
 			b.putSerializable(EXTRA_CONVERSATION_INFO, items[arg0]);
 			b.putInt(EXTRA_FRAGMENT_POSITION, arg0);
 			b.putBoolean("send_now", send);
-			Fragment f = Fragment.instantiate(context, SmsConversation.class.getName(), b);
-			f.setArguments(b);			
+			Fragment f = Fragment.instantiate(context,
+					SmsConversation.class.getName(), b);
+			f.setArguments(b);
+			((SmsConversation) f).setItemSeenListener(listener);
+			((SmsConversation) f)
+					.setDraftAvailableListener(draftAvailableListener);
 			instantiatedFragments.put(arg0, f);
 			return f;
 		}
@@ -63,4 +71,12 @@ public class SmsThreadPageAdapter extends FragmentPagerAdapter {
 		super.setPrimaryItem(container, position, object);
 	}
 
+	public SmsDraftAvailableListener getDraftAvailableListener() {
+		return draftAvailableListener;
+	}
+
+	public void setDraftAvailableListener(
+			SmsDraftAvailableListener draftAvailableListener) {
+		this.draftAvailableListener = draftAvailableListener;
+	}
 }

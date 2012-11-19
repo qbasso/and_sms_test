@@ -54,7 +54,7 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 		if (item != null) {
 			holder.contactName.setText(ctx.getString(R.string.contact_name,
 					item.getDisplayName(), item.getCount()));
-			holder.messageSnippet.setText(item.getSnippet());
+			holder.messageSnippet.setText(item.isDraft() ? "Robocza: " + item.getSnippet() : item.getSnippet());
 			if (item.getUnread() > 0) {
 				holder.unreadCount.setText(String.valueOf(item.getUnread()));
 				holder.unreadIcon.setVisibility(View.VISIBLE);

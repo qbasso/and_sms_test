@@ -15,6 +15,9 @@ public final class R {
         public static final int expand_from_top=0x7f040003;
         public static final int shake=0x7f040004;
     }
+    public static final class array {
+        public static final int conversation_actions=0x7f060000;
+    }
     public static final class attr {
     }
     public static final class drawable {
@@ -29,37 +32,37 @@ public final class R {
         public static final int unread_circle=0x7f020008;
     }
     public static final class id {
-        public static final int action_buttons=0x7f080010;
-        public static final int action_title=0x7f080000;
-        public static final int button_compose_new=0x7f08000b;
-        public static final int cancel_dialog_button=0x7f080019;
-        public static final int cancel_dialog_message=0x7f080018;
-        public static final int cancel_dialog_progress=0x7f080017;
-        public static final int contact_name=0x7f080001;
-        public static final int contact_number=0x7f080002;
-        public static final int content_pages=0x7f08001d;
-        public static final int left_item_background=0x7f08000d;
-        public static final int main_content=0x7f080009;
-        public static final int main_menu=0x7f080008;
-        public static final int main_thread_list=0x7f08000c;
-        public static final int menu_settings=0x7f08001e;
-        public static final int recipient_input=0x7f080012;
-        public static final int right_item_background=0x7f080011;
-        public static final int sms_item_body=0x7f08000e;
-        public static final int sms_item_date=0x7f08000f;
-        public static final int sms_thread_progress=0x7f08001b;
-        public static final int sms_thread_progress_bar=0x7f08001a;
-        public static final int sms_thread_send_bar=0x7f080013;
-        public static final int sms_thread_sms_input=0x7f080014;
-        public static final int sms_thread_sms_length=0x7f080015;
-        public static final int sms_thread_sms_list=0x7f08001c;
-        public static final int sms_thread_sms_send_button=0x7f080016;
-        public static final int thread_item_background=0x7f080003;
-        public static final int thread_item_contact_name=0x7f080004;
-        public static final int thread_item_last_message=0x7f080005;
-        public static final int thread_item_unread_count=0x7f080007;
-        public static final int thread_item_unread_icon=0x7f080006;
-        public static final int top_bar=0x7f08000a;
+        public static final int action_buttons=0x7f090010;
+        public static final int action_title=0x7f090000;
+        public static final int button_compose_new=0x7f09000b;
+        public static final int cancel_dialog_button=0x7f090019;
+        public static final int cancel_dialog_message=0x7f090018;
+        public static final int cancel_dialog_progress=0x7f090017;
+        public static final int contact_name=0x7f090001;
+        public static final int contact_number=0x7f090002;
+        public static final int content_pages=0x7f09001d;
+        public static final int left_item_background=0x7f09000d;
+        public static final int main_content=0x7f090009;
+        public static final int main_menu=0x7f090008;
+        public static final int main_thread_list=0x7f09000c;
+        public static final int menu_settings=0x7f09001e;
+        public static final int recipient_input=0x7f090012;
+        public static final int right_item_background=0x7f090011;
+        public static final int sms_item_body=0x7f09000e;
+        public static final int sms_item_date=0x7f09000f;
+        public static final int sms_thread_progress=0x7f09001b;
+        public static final int sms_thread_progress_bar=0x7f09001a;
+        public static final int sms_thread_send_bar=0x7f090013;
+        public static final int sms_thread_sms_input=0x7f090014;
+        public static final int sms_thread_sms_length=0x7f090015;
+        public static final int sms_thread_sms_list=0x7f09001c;
+        public static final int sms_thread_sms_send_button=0x7f090016;
+        public static final int thread_item_background=0x7f090003;
+        public static final int thread_item_contact_name=0x7f090004;
+        public static final int thread_item_last_message=0x7f090005;
+        public static final int thread_item_unread_count=0x7f090007;
+        public static final int thread_item_unread_icon=0x7f090006;
+        public static final int top_bar=0x7f09000a;
     }
     public static final class layout {
         public static final int action_item=0x7f030000;
@@ -75,7 +78,7 @@ public final class R {
         public static final int thread_pager=0x7f03000a;
     }
     public static final class menu {
-        public static final int activity_main=0x7f070000;
+        public static final int activity_main=0x7f080000;
     }
     public static final class string {
         public static final int action_delete_message=0x7f050006;
@@ -94,12 +97,12 @@ public final class R {
         public static final int title_activity_main=0x7f050003;
     }
     public static final class style {
-        public static final int AppFont=0x7f060001;
-        public static final int AppFont_Big=0x7f060004;
-        public static final int AppFont_Bold=0x7f060002;
-        public static final int AppFont_Small=0x7f060003;
-        public static final int AppTheme=0x7f060000;
-        public static final int bottom_anim=0x7f060005;
-        public static final int top_anim=0x7f060006;
+        public static final int AppFont=0x7f070001;
+        public static final int AppFont_Big=0x7f070004;
+        public static final int AppFont_Bold=0x7f070002;
+        public static final int AppFont_Small=0x7f070003;
+        public static final int AppTheme=0x7f070000;
+        public static final int bottom_anim=0x7f070005;
+        public static final int top_anim=0x7f070006;
     }
 }

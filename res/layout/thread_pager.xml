@@ -13,12 +13,12 @@
     </android.support.v4.view.ViewPager>
 
     <LinearLayout
-        android:padding="8dp"
         android:id="@+id/sms_thread_send_bar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentBottom="true"
-        android:orientation="vertical" >
+        android:orientation="vertical"
+        android:padding="8dp" >
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -29,13 +29,13 @@
                 android:id="@+id/sms_thread_sms_input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:lines="3"
-                android:layout_weight="1"
-                android:imeOptions="actionSend"
-                android:gravity="top"
-                android:layout_marginRight="8dp"
                 android:layout_marginBottom="8dp"
-                android:inputType="textCapSentences|textLongMessage|textMultiLine" />
+                android:layout_marginRight="8dp"
+                android:layout_weight="1"
+                android:gravity="top"
+                android:imeOptions="actionSend"
+                android:inputType="textCapSentences|textLongMessage|textMultiLine"
+                android:lines="3" />
 
             <Button
                 android:id="@+id/sms_thread_sms_send_button"
@@ -47,11 +47,24 @@
         </LinearLayout>
 
         <TextView
-            style="@style/AppFont"
             android:id="@+id/sms_thread_sms_length"
+            style="@style/AppFont"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:background="#77000000"
+        android:visibility="gone" >
+
+        <Button
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:text="Rozumiem" />
     </LinearLayout>
 
 </RelativeLayout>

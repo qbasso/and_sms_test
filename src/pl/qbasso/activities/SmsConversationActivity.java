@@ -3,6 +3,7 @@ package pl.qbasso.activities;
 import pl.qbasso.custom.SmsThreadPageAdapter;
 import pl.qbasso.fragments.SmsConversation;
 import pl.qbasso.interfaces.ItemSeenListener;
+import pl.qbasso.interfaces.SmsDraftAvailableListener;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.SmsDbHelper;
@@ -13,16 +14,17 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
+import android.support.v4.view.ViewPager.OnPageChangeListener;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class SmsConversationActivity extends FragmentActivity implements
-		ItemSeenListener {
+		ItemSeenListener, SmsDraftAvailableListener {
 
 	private static final String EXTRA_CONVERSATION_NUMBER = "threadNumber";
 	public static final String EXTRA_CONVERSATION_LIST = "threadList";
@@ -42,9 +44,33 @@ public class SmsConversationActivity extends FragmentActivity implements
 				int itemPos = viewPager.getCurrentItem();
 				((SmsConversation) adapter.getItem(itemPos)).sendText(
 						messageBody, 0);
+				if (listInfo[itemPos].isDraft()) {
+					helper.deleteDraftForThread(listInfo[viewPager
+							.getCurrentItem()].getThreadId());
+				}
+				smsInput.getText().clear();
 				InputMethodManager imm = (InputMethodManager) getSystemService(Activity.INPUT_METHOD_SERVICE);
 				imm.hideSoftInputFromWindow(smsInput.getWindowToken(), 0);
 			}
+		}
+	};
+	private OnPageChangeListener pageChangedListener = new OnPageChangeListener() {
+
+		public void onPageSelected(int arg0) {
+			ConversationModel cm = listInfo[arg0];
+			if (cm.isDraft()) {
+				smsInput.setText(cm.getSnippet());
+			}
+		}
+
+		public void onPageScrolled(int arg0, float arg1, int arg2) {
+			// TODO Auto-generated method stub
+
+		}
+
+		public void onPageScrollStateChanged(int arg0) {
+			// TODO Auto-generated method stub
+
 		}
 	};
 
@@ -71,9 +97,11 @@ public class SmsConversationActivity extends FragmentActivity implements
 		sendButton = (Button) findViewById(R.id.sms_thread_sms_send_button);
 		sendButton.setOnClickListener(sendListener);
 		viewPager = (ViewPager) findViewById(R.id.content_pages);
-		adapter = new SmsThreadPageAdapter(this, listInfo, this, getIntent().getBooleanExtra("send_now", false));
+		adapter = new SmsThreadPageAdapter(this, listInfo, this, this,
+				getIntent().getBooleanExtra("send_now", false));
 		viewPager.setAdapter(adapter);
 		viewPager.setCurrentItem(pageNo);
+		viewPager.setOnPageChangeListener(pageChangedListener);
 	}
 
 	protected int findAdapterByThreadId(long threadId) {
@@ -87,6 +115,28 @@ public class SmsConversationActivity extends FragmentActivity implements
 
 	@Override
 	public void onPause() {
+		ConversationModel cm = listInfo[viewPager.getCurrentItem()];
+		long msgId = helper.getDraftIdForThread(cm.getThreadId());
+		if (smsInput.getText().length() > 0) {
+			if (msgId > -1) {
+				helper.updateDraftMessage(msgId, smsInput.getText().toString(),
+						System.currentTimeMillis());
+			} else {
+				SmsModel m = new SmsModel(0, cm.getThreadId(), cm.getAddress(),
+						"", System.currentTimeMillis(), smsInput.getText()
+								.toString(), SmsModel.MESSAGE_TYPE_DRAFT,
+						SmsModel.MESSAGE_NOT_READ, SmsModel.STATUS_NONE);
+				helper.insertSms(SmsDbHelper.SMS_DRAFT_URI, m);
+			}
+			Toast.makeText(ctx, "Dodano do wersji roboczych",
+					Toast.LENGTH_SHORT).show();
+			ConversationList.NEED_REFRESH = true;
+		} else {
+			if (msgId > -1) {
+				helper.deleteSms(SmsDbHelper.SMS_URI, msgId);
+				ConversationList.NEED_REFRESH = true;
+			}
+		}
 		super.onPause();
 	}
 
@@ -96,4 +146,23 @@ public class SmsConversationActivity extends FragmentActivity implements
 			ConversationList.NEED_REFRESH = true;
 		}
 	}
+
+	@Override
+	public void onBackPressed() {
+
+		super.onBackPressed();
+	}
+
+	public void draftTextAvailable(String text, int position) {
+		if (position == viewPager.getCurrentItem()) {
+			smsInput.setText(text);
+		}
+	}
+
+	@Override
+	protected void onDestroy() {
+
+		super.onDestroy();
+	}
+
 }

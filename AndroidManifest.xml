@@ -50,7 +50,9 @@
                 <action android:name="pl.qbasso.RESEND" />
             </intent-filter>
         </receiver>
-        <service android:name="pl.qbasso.custom.SendTaskService"></service>
+
+        <service android:name="pl.qbasso.custom.SendTaskService" >
+        </service>
     </application>
 
 </manifest>

@@ -2,6 +2,7 @@ package pl.qbasso.activities;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import pl.qbasso.custom.ContactsAdapter;
 import pl.qbasso.custom.ConversationAdapter;
@@ -15,15 +16,25 @@ import pl.qbasso.sms.SmsLengthWatcher;
 import pl.qbasso.sms.SmsSendHelper;
 import pl.qbasso.smssender.R;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.app.AlertDialog.Builder;
+import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
+import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.os.Message;
+import android.os.Messenger;
+import android.os.RemoteException;
+import android.support.v4.app.DialogFragment;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -35,6 +46,10 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 
+/**
+ * @author jakub.porzuczek
+ * 
+ */
 public class ConversationList extends Activity {
 
 	protected static final String EXTRA_CLIENT_ID = "client_id";
@@ -50,12 +65,63 @@ public class ConversationList extends Activity {
 	private Button sendSmsButton;
 	public static boolean NEED_REFRESH = false;
 	protected TextView messageLength;
+	private Messenger messenger;
+	private Messenger mService;
 
+	private DialogFragment longClickDialog = new DialogFragment() {
+
+		@Override
+		public Dialog onCreateDialog(Bundle savedInstanceState) {
+			AlertDialog.Builder b = new Builder(ctx);
+			b.setItems(R.array.conversation_actions, dialogItemClickListener );
+			return super.onCreateDialog(savedInstanceState);
+		}
+		
+	};
+	
 	protected OnItemClickListener autoCompleteItemListener = new OnItemClickListener() {
 
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {
+		}
+	};
 
+
+	private Handler incomingHandler = new Handler() {
+		@Override
+		public void handleMessage(Message m) {
+			switch (m.what) {
+			case SendTaskService.MESSAGE_QUEUE_EMPTY:
+				finish();
+			case SendTaskService.MESSAGE_QUEUE_NOT_EMPTY:
+				Intent startMain = new Intent(Intent.ACTION_MAIN);
+				startMain.addCategory(Intent.CATEGORY_HOME);
+				startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+				startActivity(startMain);
+				break;
+			default:
+				break;
+			}
+		}
+	};
+
+	private ServiceConnection connection = new ServiceConnection() {
+		public void onServiceDisconnected(ComponentName name) {
+			mService = null;
+		}
+
+		public void onServiceConnected(ComponentName name, IBinder service) {
+			try {
+				Bundle b = new Bundle();
+				b.putString(EXTRA_CLIENT_ID, clientId);
+				mService = new Messenger(service);
+				Message m = Message.obtain(null, SendTaskService.REGISTER);
+				m.replyTo = messenger;
+				m.setData(b);
+				mService.send(m);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
 		}
 	};
 
@@ -63,55 +129,11 @@ public class ConversationList extends Activity {
 		public void onClick(View arg0) {
 			String sender = contactInput.getText().toString();
 			String body = messageInput.getText().toString();
-			if (body.length() > 0 && sender.length() > 0) {
-				SmsModel m = new SmsModel(0, -1, contactInput.getText()
-						.toString(), "", System.currentTimeMillis(),
-						messageInput.getText().toString(),
-						SmsModel.MESSAGE_TYPE_SENT, SmsModel.MESSAGE_READ,
-						SmsModel.STATUS_WAITING);
-				m.setAddressDisplayName(adapter
-						.getCurrentlySelectedDisplayName() != null ? adapter
-						.getCurrentlySelectedDisplayName() : m.getAddress());
-				// helper.sendText(ctx, m, true);
-				Uri u = smsAccessor.insertSms(m);
-				long threadId = smsAccessor.getThreadIdForSmsUri(u);
-				int existingId = isExistingThread(threadId);
-				if (existingId > -1) {
-					startSmsConversationActivity(existingId, true);
-				} else {
-					Intent i = new Intent(ctx, SmsConversationActivity.class);
-					ConversationModel conversationModel = new ConversationModel(
-							threadId, 0, "");
-					conversationModel.setDisplayName(smsAccessor
-							.getDisplayName(sender));
-					ArrayList<ConversationModel> items = new ArrayList<ConversationModel>();
-					items.add(conversationModel);
-					i.putExtra("threadList", items.toArray());
-					i.putExtra("threadNumber", 0);
-					i.putExtra("send_now", true);
-					overridePendingTransition(android.R.anim.slide_out_right,
-							android.R.anim.slide_in_left);
-					startActivity(i);
-				}
-				// sendingNow = m;
-				// m.setAddressDisplayName(info.getDisplayName());
-				// m.setId(Long.parseLong(u.getLastPathSegment()));
-				// Message message = Message.obtain();
-				// Bundle b = new Bundle();
-				// b.putSerializable(SmsSendHelper.EXTRA_MESSAGE, m);
-				// b.putString(EXTRA_CLIENT_ID, clientId);
-				// message.what = SendTaskService.QUEUE_MESSAGE;
-				// message.setData(b);
-				// try {
-				// mService.send(message);
-				// items.add(0, m);
-				// adapter.notifyDataSetChanged();
-				// } catch (RemoteException e) {
-				// e.printStackTrace();
-				// }
-			}
+			sendMessageFromMainScreen(sender, body);
 		}
+
 	};
+
 	private BroadcastReceiver updateReceiver;
 	protected ContactsAdapter adapter;
 
@@ -154,6 +176,7 @@ public class ConversationList extends Activity {
 			contactInput = (AutoCompleteTextView) findViewById(R.id.recipient_input);
 			adapter = new ContactsAdapter(ctx, R.layout.contact_item);
 			contactInput.setAdapter(adapter);
+
 			contactInput.setThreshold(1);
 			contactInput.setOnItemClickListener(autoCompleteItemListener);
 			messageLength = (TextView) findViewById(R.id.sms_thread_sms_length);
@@ -177,7 +200,6 @@ public class ConversationList extends Activity {
 	}
 
 	private Handler mainHandler = new Handler() {
-
 		@Override
 		public void handleMessage(Message m) {
 			ConversationAdapter adapter = new ConversationAdapter(ctx,
@@ -204,6 +226,7 @@ public class ConversationList extends Activity {
 			}
 		}
 	};
+	private String clientId;
 
 	private void updateItems() {
 		showProgressDialog();
@@ -220,7 +243,10 @@ public class ConversationList extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.conversation_list);
 		this.ctx = this;
-		startService(new Intent(ctx, SendTaskService.class));
+		clientId = UUID.randomUUID().toString();
+		messenger = new Messenger(incomingHandler);
+		bindService(new Intent(ctx, SendTaskService.class), connection,
+				BIND_AUTO_CREATE);
 		slideHeper = new SlideHelper(this, R.layout.send_sms_screen);
 		slideHeper.setSlidingViewLoadedListener(listener);
 		smsThreadList = (ListView) findViewById(R.id.main_thread_list);
@@ -260,31 +286,61 @@ public class ConversationList extends Activity {
 		if (slideHeper.isMenuShown()) {
 			slideHeper.hideMenu(false);
 		} else {
-			super.onBackPressed();
+			if (isTaskRoot()) {
+				try {
+					Bundle b = new Bundle();
+					b.putString(SendTaskService.EXTRA_CLIENT_ID, clientId);
+					Message m = Message.obtain(null,
+							SendTaskService.MESSAGE_QUEUE_EMPTY);
+					m.setData(b);
+					mService.send(m);
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
+			} else {
+				super.onBackPressed();
+			}
 		}
 	}
 
 	@Override
 	protected void onPause() {
+		unregisterReceiver(updateReceiver);
 		super.onPause();
-	}
-
-	private int isExistingThread(long threadId) {
-		int result = -1;
-		for (ConversationModel conversation : items) {
-			if (conversation.getThreadId() == threadId) {
-				result = items.indexOf(conversation);
-				break;
-			}
-		}
-		return result;
 	}
 
 	@Override
 	protected void onDestroy() {
-		// TODO Auto-generated method stub
+		unbindService(connection);
+
 		super.onDestroy();
-		stopService(new Intent(this, SendTaskService.class));
+	}
+
+	private void sendMessageFromMainScreen(String sender, String body) {
+		if (body.length() > 0 && sender.length() > 0) {
+			SmsModel m = new SmsModel(0, -1, contactInput.getText().toString(),
+					"", System.currentTimeMillis(), messageInput.getText()
+							.toString(), SmsModel.MESSAGE_TYPE_SENT,
+					SmsModel.MESSAGE_READ, SmsModel.STATUS_WAITING);
+			m.setAddressDisplayName(adapter.getCurrentlySelectedDisplayName() != null ? adapter
+					.getCurrentlySelectedDisplayName() : m.getAddress());
+			Uri u = smsAccessor.insertSms(SmsDbHelper.SMS_URI, m);
+			long threadId = smsAccessor.getThreadIdForSmsUri(u);
+			Intent i = new Intent(ctx, SmsConversationActivity.class);
+			ConversationModel conversationModel = new ConversationModel(
+					threadId, 0, "");
+			conversationModel.setAddress(m.getAddress());
+			conversationModel
+					.setDisplayName(smsAccessor.getDisplayName(sender));
+			ArrayList<ConversationModel> items = new ArrayList<ConversationModel>();
+			items.add(conversationModel);
+			i.putExtra("threadList", items.toArray());
+			i.putExtra("threadNumber", 0);
+			i.putExtra("send_now", true);
+			overridePendingTransition(android.R.anim.slide_out_right,
+					android.R.anim.slide_in_left);
+			startActivity(i);
+		}
 	}
 
 }

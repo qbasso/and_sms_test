@@ -18,19 +18,6 @@ import android.os.Messenger;
 import android.os.RemoteException;
 
 public class SendTaskService extends Service {
-	
-	private static SendTaskService instance;
-	
-	public SendTaskService() {
-		// TODO Auto-generated constructor stub
-	}
-	
-	public static SendTaskService getInstance() {
-		if (instance==null) {
-			instance = new SendTaskService();
-		}
-		return instance;
-	}
 
 	public static final String EXTRA_POSITION = "adapter_position";
 	public static final String EXTRA_CLIENT_ID = "client_id";
@@ -42,6 +29,8 @@ public class SendTaskService extends Service {
 	public static final int QUEUE_MESSAGE = 2;
 	public static final int CANCEL_MESSAGE = 3;
 	public static final int COMPLETE_MESSAGE = 4;
+	public static final int MESSAGE_QUEUE_EMPTY = 5;
+	public static final int MESSAGE_QUEUE_NOT_EMPTY = 6;
 	private Context mContext;
 	private SmsDbHelper mDbHelper;
 	private SmsSendHelper mSendHelper;
@@ -49,12 +38,7 @@ public class SendTaskService extends Service {
 	private Handler incomingHandler = new Handler() {
 		@Override
 		public void handleMessage(Message m) {
-			SmsModel smsModel;
-			String clientId;
-			Message toSend;
-			int adapterPosition;
 			Bundle b = m.getData();
-			Bundle data = new Bundle();
 			switch (m.what) {
 			case REGISTER:
 				mClients.put(b.getString(EXTRA_CLIENT_ID), m.replyTo);
@@ -63,66 +47,106 @@ public class SendTaskService extends Service {
 				mClients.remove(m.replyTo);
 				break;
 			case QUEUE_MESSAGE:
-				smsModel = (SmsModel) b
-						.getSerializable(SmsSendHelper.EXTRA_MESSAGE);
-				adapterPosition = b.getInt(EXTRA_POSITION);
-				clientId = b.getString(EXTRA_CLIENT_ID);
-				addToQueue(smsModel, adapterPosition, clientId);
+				handleQueueMessage(b);
 				break;
 			case CANCEL_MESSAGE:
-				smsModel = (SmsModel) b
-						.getSerializable(SmsSendHelper.EXTRA_MESSAGE);
-				clientId = b.getString(EXTRA_CLIENT_ID);
-				if (mMessageQueue.containsKey(smsModel.getId())) {
-					mMessageQueue.get(smsModel.getId()).cancel();
-					mMessageQueue.remove(smsModel.getId());
-					data.putLong(SmsSendHelper.EXTRA_MESSAGE_ID,
-							smsModel.getId());
-					data.putInt(EXTRA_POSITION,
-							b.getInt(EXTRA_POSITION));
-					try {
-						toSend = Message.obtain(null, CANCEL_MESSAGE);
-						toSend.setData(data);
-						mClients.get(clientId).send(toSend);
-						mDbHelper.deleteSms(smsModel.getId());
-					} catch (RemoteException e) {
-						e.printStackTrace();
-					}
-				}
+				handleCancelMessage(b);
 				break;
 			case COMPLETE_MESSAGE:
-				smsModel = (SmsModel) b
-						.getSerializable(SmsSendHelper.EXTRA_MESSAGE);
-				clientId = b.getString(EXTRA_CLIENT_ID);
-				data.putLong(SmsSendHelper.EXTRA_MESSAGE_ID, smsModel.getId());
+				handleCompleteMessage(b);
+				break;
+			case MESSAGE_QUEUE_EMPTY:
+				handleQueueEmptyMEssage(b);
+			default:
+				break;
+			}
+		}
+
+		private void handleQueueEmptyMEssage(Bundle b) {
+			String clientId;
+			Message toSend;
+			clientId = b.getString(EXTRA_CLIENT_ID);
+			if (mMessageQueue.isEmpty()) {
+				toSend = Message.obtain(null, MESSAGE_QUEUE_EMPTY);
+			} else {
+				toSend = Message.obtain(null, MESSAGE_QUEUE_NOT_EMPTY);
+			}
+			try {
+				mClients.get(clientId).send(toSend);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+		}
+
+		private void handleQueueMessage(Bundle b) {
+			SmsModel smsModel;
+			String clientId;
+			int adapterPosition;
+			smsModel = (SmsModel) b
+					.getSerializable(SmsSendHelper.EXTRA_MESSAGE);
+			adapterPosition = b.getInt(EXTRA_POSITION);
+			clientId = b.getString(EXTRA_CLIENT_ID);
+			addToQueue(smsModel, adapterPosition, clientId);
+		}
+
+		private void handleCompleteMessage(Bundle b) {
+			Bundle data = new Bundle();
+			SmsModel smsModel;
+			String clientId;
+			Message toSend;
+			smsModel = (SmsModel) b
+					.getSerializable(SmsSendHelper.EXTRA_MESSAGE);
+			clientId = b.getString(EXTRA_CLIENT_ID);
+			data.putSerializable(SmsSendHelper.EXTRA_MESSAGE, smsModel);
+			data.putInt(EXTRA_POSITION, b.getInt(EXTRA_POSITION));
+			try {
+				mDbHelper.updateSmsStatus(
+						Uri.withAppendedPath(SmsDbHelper.SMS_URI,
+								String.valueOf(smsModel.getId())),
+						SmsModel.STATUS_PENDING, SmsModel.MESSAGE_TYPE_SENT);
+				smsModel.setStatus(SmsModel.STATUS_PENDING);
+				smsModel.setSmsType(SmsModel.MESSAGE_TYPE_SENT);
+				toSend = Message.obtain(null, COMPLETE_MESSAGE);
+				toSend.setData(data);
+				mClients.get(clientId).send(toSend);
+				mMessageQueue.remove(smsModel.getId());
+				mSendHelper.sendText(mContext, smsModel, false);
+			} catch (RemoteException e) {
+				e.printStackTrace();
+			}
+		}
+
+		private void handleCancelMessage(Bundle b) {
+			SmsModel smsModel;
+			Bundle data = new Bundle();
+			String clientId;
+			Message toSend;
+			smsModel = (SmsModel) b
+					.getSerializable(SmsSendHelper.EXTRA_MESSAGE);
+			clientId = b.getString(EXTRA_CLIENT_ID);
+			if (mMessageQueue.containsKey(smsModel.getId())) {
+				mMessageQueue.get(smsModel.getId()).cancel();
+				mMessageQueue.remove(smsModel.getId());
+				data.putSerializable(SmsSendHelper.EXTRA_MESSAGE, smsModel);
 				data.putInt(EXTRA_POSITION, b.getInt(EXTRA_POSITION));
 				try {
-					toSend = Message.obtain(null, COMPLETE_MESSAGE);
+					toSend = Message.obtain(null, CANCEL_MESSAGE);
 					toSend.setData(data);
-					mDbHelper.updateSmsStatus(
-							Uri.withAppendedPath(SmsDbHelper.SMS_URI,
-									String.valueOf(smsModel.getId())),
-							SmsModel.STATUS_PENDING);
+					mDbHelper.deleteSms(SmsDbHelper.SMS_URI, smsModel.getId());
 					mClients.get(clientId).send(toSend);
-					mMessageQueue.remove(smsModel);
-					mSendHelper.sendText(mContext, smsModel, false);
 				} catch (RemoteException e) {
 					e.printStackTrace();
 				}
-				break;
-			default:
-
-				break;
 			}
 		}
 
 		private void addToQueue(final SmsModel message,
 				final int adapterPosition, final String clientId) {
-			CountDownTimer timer = new CountDownTimer(5000, 1000) {
+			CountDownTimer timer = new CountDownTimer(4000, 1000) {
 
 				private int position = adapterPosition;
 				private String id = clientId;
-				public SmsModel m = message;
+				public SmsModel msg = message;
 
 				@Override
 				public void onTick(long millisUntilFinished) {
@@ -131,7 +155,7 @@ public class SendTaskService extends Service {
 				@Override
 				public void onFinish() {
 					Bundle b = new Bundle();
-					b.putSerializable(SmsSendHelper.EXTRA_MESSAGE, m);
+					b.putSerializable(SmsSendHelper.EXTRA_MESSAGE, msg);
 					b.putInt(EXTRA_POSITION, position);
 					b.putString(EXTRA_CLIENT_ID, id);
 					Message m = Message.obtain();
@@ -164,7 +188,6 @@ public class SendTaskService extends Service {
 
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
-		// TODO Auto-generated method stub
 		return super.onStartCommand(intent, flags, startId);
 	}
 

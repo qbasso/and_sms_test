@@ -25,13 +25,20 @@ public class SmsDbHelper {
 		this.resolver = r;
 	}
 
-	public void updateSmsType(Uri u, int smsState) {
+	public int updateSmsStatus(Uri u, int smsStatus, int smsType) {
+		int result;
 		ContentValues values = new ContentValues();
-		values.put(SmsModel.TYPE, smsState);
-		resolver.update(u, values, null, null);
+		if (smsStatus != -1) {
+			values.put(SmsModel.STATUS, smsStatus);
+		}
+		if (smsType != -1) {
+			values.put(SmsModel.TYPE, smsType);
+		}
+		result = resolver.update(u, values, null, null);
+		return result;
 	}
 
-	public Uri insertSms(SmsModel m) {
+	public Uri insertSms(Uri u, SmsModel m) {
 		ContentValues values = new ContentValues();
 		values.put(SmsModel.ADDRESS, m.getAddress());
 		values.put(SmsModel.BODY, m.getBody());
@@ -45,7 +52,7 @@ public class SmsDbHelper {
 		}
 		values.put(SmsModel.TYPE, m.getSmsType());
 		values.put(SmsModel.STATUS, m.getStatus());
-		return resolver.insert(SMS_URI, values);
+		return resolver.insert(u, values);
 	}
 
 	public long getThreadIdForSmsUri(Uri u) {
@@ -128,20 +135,8 @@ public class SmsDbHelper {
 				ConversationModel m = new ConversationModel(c.getLong(0),
 						c.getInt(1), c.getString(2));
 				String phoneNumber = getPhoneNumber(m.getThreadId());
-				c1 = resolver.query(
-						SMS_URI,
-						new String[] { "count(read)" },
-						SmsModel.THREAD_ID + "= ? and " + SmsModel.READ
-								+ " = ?",
-						new String[] { String.valueOf(m.getThreadId()),
-								String.valueOf(SmsModel.MESSAGE_NOT_READ) },
-						null);
-				if (c1 != null) {
-					if (c1.moveToNext()) {
-						m.setUnread(c1.getInt(0));
-					}
-					c1.close();
-				}
+				getUnreadCount(m);
+				checkForDraft(m);
 				String displayName = getDisplayName(phoneNumber);
 				m.setAddress(phoneNumber);
 				m.setDisplayName(getThreadDisplayName(phoneNumber, displayName));
@@ -152,12 +147,47 @@ public class SmsDbHelper {
 		return result;
 	}
 
+	private void checkForDraft(ConversationModel m) {
+		Cursor c1;
+		c1 = resolver.query(SMS_DRAFT_URI, new String[] { SmsModel.BODY },
+				SmsModel.THREAD_ID + "= ?",
+				new String[] { String.valueOf(m.getThreadId()) }, null);
+		if (c1 != null) {
+			if (c1.moveToNext()) {
+				m.setSnippet(c1.getString(0));
+				m.setDraft(true);
+			}
+			c1.close();
+		}
+	}
+
+	private void getUnreadCount(ConversationModel m) {
+		Cursor c1;
+		c1 = resolver.query(
+				SMS_URI,
+				new String[] { "count(read)" },
+				SmsModel.THREAD_ID + "= ? and " + SmsModel.READ + " = ?",
+				new String[] { String.valueOf(m.getThreadId()),
+						String.valueOf(SmsModel.MESSAGE_NOT_READ) }, null);
+		if (c1 != null) {
+			if (c1.moveToNext()) {
+				m.setUnread(c1.getInt(0));
+			}
+			c1.close();
+		}
+	}
+
 	public List<SmsModel> getSmsForThread(long threadId) {
 		List<SmsModel> result = new ArrayList<SmsModel>();
-		Cursor c = resolver.query(SMS_URI, new String[] { SmsModel.ID,
-				SmsModel.BODY, SmsModel.ADDRESS, SmsModel.DATE, SmsModel.TYPE,
-				SmsModel.READ, SmsModel.STATUS }, SmsModel.THREAD_ID + "=?",
-				new String[] { String.valueOf(threadId) }, SMS_SORT_ORDER);
+		Cursor c = resolver.query(
+				SMS_URI,
+				new String[] { SmsModel.ID, SmsModel.BODY, SmsModel.ADDRESS,
+						SmsModel.DATE, SmsModel.TYPE, SmsModel.READ,
+						SmsModel.STATUS },
+				SmsModel.THREAD_ID + "=? and " + SmsModel.TYPE + " <> ?",
+				new String[] { String.valueOf(threadId),
+						String.valueOf(SmsModel.MESSAGE_TYPE_DRAFT) },
+				SMS_SORT_ORDER);
 		if (c != null) {
 			while (c.moveToNext()) {
 				result.add(new SmsModel(c.getLong(0), threadId, c.getString(2),
@@ -193,8 +223,8 @@ public class SmsDbHelper {
 		// new String[] { String.valueOf(threadId) });
 	}
 
-	public void deleteSms(long smsId) {
-		resolver.delete(SMS_URI, SmsModel.ID + "=?",
+	public void deleteSms(Uri u, long smsId) {
+		resolver.delete(u, SmsModel.ID + "=?",
 				new String[] { String.valueOf(smsId) });
 	}
 
@@ -207,10 +237,56 @@ public class SmsDbHelper {
 		return result;
 	}
 
-	public void updateSmsStatus(Uri u, int smsStatus) {
-		ContentValues values = new ContentValues();
-		values.put(SmsModel.STATUS, smsStatus);
-		resolver.update(u, values, null, null);
+	public long getDraftIdForThread(long threadId) {
+		long result = -1;
+		Cursor c = resolver.query(
+				SMS_DRAFT_URI,
+				new String[] { SmsModel.ID },
+				SmsModel.THREAD_ID + " = ? and " + SmsModel.TYPE + " = ?",
+				new String[] { String.valueOf(threadId),
+						String.valueOf(SmsModel.MESSAGE_TYPE_DRAFT) }, null);
+		if (c != null) {
+			if (c.moveToNext()) {
+				result = c.getLong(0);
+			}
+		}
+		return result;
 	}
 
+	public String getDraftTextForThread(long threadId) {
+		String result = null;
+		Cursor c = resolver.query(
+				SMS_DRAFT_URI,
+				new String[] { SmsModel.BODY },
+				SmsModel.THREAD_ID + " = ? and " + SmsModel.TYPE + " = ?",
+				new String[] { String.valueOf(threadId),
+						String.valueOf(SmsModel.MESSAGE_TYPE_DRAFT) }, null);
+		if (c != null) {
+			if (c.moveToNext()) {
+				result = c.getString(0);
+			}
+		}
+		return result;
+	}
+
+	public int updateDraftMessage(long msgId, String body, long date) {
+		int result = 0;
+		ContentValues cv = new ContentValues();
+		cv.put(SmsModel.BODY, body);
+		cv.put(SmsModel.DATE, date);
+		result = resolver.update(
+				Uri.withAppendedPath(SMS_DRAFT_URI, String.valueOf(msgId)), cv,
+				null, null);
+		return result;
+	}
+
+	public int deleteDraftForThread(long threadId) {
+		int result;
+		result = resolver.delete(
+				SMS_URI,
+				SmsModel.THREAD_ID + " = ? and " + SmsModel.TYPE + " = ?",
+				new String[] { String.valueOf(threadId),
+						String.valueOf(SmsModel.MESSAGE_TYPE_DRAFT) });
+		return result;
+	}
 }

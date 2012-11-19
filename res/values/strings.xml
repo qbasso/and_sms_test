@@ -14,5 +14,8 @@
     <string name="send_sms_to">Do</string>
     <string name="send_sms_content_hint">Treść</string>
     <string name="send_sms_send_label">Wyślij</string>
+    <string-array name="conversation_actions">
+        <item >Usuń wątek</item>
+    </string-array>
 
 </resources>

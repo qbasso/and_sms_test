@@ -46,7 +46,7 @@ public class SmsReceiver extends BroadcastReceiver {
 							System.currentTimeMillis(), body,
 							SmsModel.MESSAGE_TYPE_INBOX,
 							SmsModel.MESSAGE_NOT_READ, SmsModel.STATUS_COMPLETE);
-					Uri u = smsDb.insertSms(model);
+					Uri u = smsDb.insertSms(SmsDbHelper.SMS_URI, model);
 					if (threadId == -1) {
 						threadId = smsDb.getThreadIdForSmsUri(u);
 					}

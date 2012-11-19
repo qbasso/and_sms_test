@@ -73,6 +73,8 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 			if (item.getStatus() == SmsModel.STATUS_WAITING) {
 				leftHolder.background.startAnimation(AnimationUtils
 						.loadAnimation(context, R.anim.shake));
+			} else {
+				leftHolder.background.setAnimation(null);
 			}
 			return view;
 		case RIGHT:
@@ -90,6 +92,8 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 			if (item.getStatus() == SmsModel.STATUS_WAITING) {
 				rightHolder.background.startAnimation(AnimationUtils
 						.loadAnimation(context, R.anim.shake));
+			} else {
+				rightHolder.background.setAnimation(null);
 			}
 			return v;
 		}
