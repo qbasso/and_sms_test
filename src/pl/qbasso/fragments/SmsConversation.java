@@ -30,6 +30,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnLongClickListener;
@@ -58,6 +59,7 @@ public class SmsConversation extends Fragment {
 	private static final int ACTION_DELETE_MESSAGE = 0;
 	private static final int ACTION_DELETE_THREAD = 1;
 	private static final int ACTION_FORWARD = 2;
+	private static final String TAG = "SmsConversation";
 	private SmsSendHelper helper;
 	private SmsModel sendingNow;
 	private String clientId;
@@ -100,6 +102,7 @@ public class SmsConversation extends Fragment {
 				items.remove(pos);
 				items.add(pos, smsModel);
 				updateItems(false);
+				ConversationList.NEED_REFRESH = true;
 				break;
 			case SendTaskService.CANCEL_MESSAGE:
 				updateItems(true);
@@ -111,6 +114,7 @@ public class SmsConversation extends Fragment {
 					smsAccessor.deleteThread(info.getThreadId());
 					act.finish();
 				}
+				ConversationList.NEED_REFRESH = true;
 				break;
 			default:
 				break;
@@ -152,10 +156,12 @@ public class SmsConversation extends Fragment {
 		public void onItemClick(int pos, Bundle b) {
 			switch (pos) {
 			case ACTION_DELETE_MESSAGE:
-				smsAccessor.deleteSms(SmsDbHelper.SMS_URI, b.getLong(EXTRA_MESSAGE_ID));
+				smsAccessor.deleteSms(SmsDbHelper.SMS_URI,
+						b.getLong(EXTRA_MESSAGE_ID));
 				items.remove(b.getInt(EXTRA_ADAPTER_POSITION));
+				ConversationList.NEED_REFRESH = true;
 				if (items.size() == 0) {
-					ConversationList.NEED_REFRESH = true;
+					act.finish();
 				}
 				adapter.notifyDataSetChanged();
 				break;
@@ -238,6 +244,8 @@ public class SmsConversation extends Fragment {
 		position = getArguments().getInt(EXTRA_FRAGMENT_POSITION);
 		helper.setOnMessageSendCompleteListener(listener);
 		clientId = UUID.randomUUID().toString();
+		Log.i(TAG,
+				String.format("Creating fragment with client id %s", clientId));
 		messenger = new Messenger(incomingHandler);
 		smsAccessor = new SmsDbHelper(act.getContentResolver());
 		bar = (LinearLayout) v.findViewById(R.id.sms_thread_progress_bar);
@@ -249,7 +257,7 @@ public class SmsConversation extends Fragment {
 
 	}
 
-	private void updateItems(boolean b) {
+	public void updateItems(boolean b) {
 		if (b) {
 			items = smsAccessor.getSmsForThread(info.getThreadId());
 		}
@@ -263,9 +271,10 @@ public class SmsConversation extends Fragment {
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 		act.bindService(new Intent(act, SendTaskService.class), connection,
-				Context.BIND_AUTO_CREATE);		
+				Context.BIND_AUTO_CREATE);
 		if (info.isDraft()) {
-			draftAvailableListener.draftTextAvailable(info.getSnippet(), position);
+			draftAvailableListener.draftTextAvailable(info.getSnippet(),
+					position);
 		}
 		smsThreadHandler.post(new Runnable() {
 			public void run() {
@@ -305,14 +314,6 @@ public class SmsConversation extends Fragment {
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
-		try {
-			Message m = Message.obtain(null, SendTaskService.UNREGISTER);
-			mService.send(m);
-		} catch (RemoteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		act.unbindService(connection);
 	}
 
 	public ItemSeenListener getItemSeenListener() {
@@ -330,6 +331,21 @@ public class SmsConversation extends Fragment {
 	public void setDraftAvailableListener(
 			SmsDraftAvailableListener draftAvailableListener) {
 		this.draftAvailableListener = draftAvailableListener;
+	}
+
+	@Override
+	public void onDestroyView() {
+		try {
+			Message m = Message.obtain(null, SendTaskService.UNREGISTER);
+			Bundle b = new Bundle();
+			b.putString(EXTRA_CLIENT_ID, clientId);
+			m.setData(b);
+			mService.send(m);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
+		act.unbindService(connection);
+		super.onDestroyView();
 	}
 
 }

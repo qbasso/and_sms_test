@@ -1,3 +1,6 @@
+/*
+ * @author JPorzuczek
+ */
 package pl.qbasso.custom;
 
 import java.util.ArrayList;
@@ -20,9 +23,19 @@ import android.widget.Filterable;
 import android.widget.TextView;
 
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class ContactsAdapter.
+ */
 public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 		Filterable {
 
+	/**
+	 * Instantiates a new contacts adapter.
+	 *
+	 * @param context the context
+	 * @param textViewResourceId the text view resource id
+	 */
 	public ContactsAdapter(Context context, int textViewResourceId) {
 		super(context, textViewResourceId);
 		inflater = (LayoutInflater) context
@@ -33,17 +46,43 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 		resourceId = textViewResourceId;
 	}
 
+	/** The inflater. */
 	private LayoutInflater inflater;
+	
+	/** The items. */
 	private List<ContactModel> items;
+	
+	/** The filtered items. */
 	private List<ContactModel> filteredItems;
+	
+	/** The resource id. */
 	private int resourceId;
+	
+	/** The filter. */
 	private Filter filter;
+	
+	/** The resolver. */
 	private ContentResolver resolver;
+	
+	/** The currently selected display name. */
 	private String currentlySelectedDisplayName;
+	
+	/** The last constraint length. */
 	private int lastConstraintLength = 0;
+	
+	/** The Constant ACTION_RELOAD. */
 	private static final int ACTION_RELOAD = 0;
+	
+	/** The Constant ACTION_RESTRICT. */
 	private static final int ACTION_RESTRICT = 1;
 
+	/**
+	 * Gets the contacts.
+	 *
+	 * @param constraint the constraint
+	 * @param action the action
+	 * @return the contacts
+	 */
 	private void getContacts(CharSequence constraint, int action) {
 		switch (action) {
 		case ACTION_RELOAD:
@@ -63,6 +102,11 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 		}
 	}
 
+	/**
+	 * Reload items.
+	 *
+	 * @param constraint the constraint
+	 */
 	private void reloadItems(CharSequence constraint) {
 		Cursor c;
 		items.clear();
@@ -132,11 +176,17 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 		return filteredItems.size();
 	}
 
+	/* (non-Javadoc)
+	 * @see android.widget.ArrayAdapter#getItem(int)
+	 */
 	@Override
 	public ContactModel getItem(int position) {
 		return filteredItems.get(position);
 	}
 
+	/* (non-Javadoc)
+	 * @see android.widget.ArrayAdapter#getView(int, android.view.View, android.view.ViewGroup)
+	 */
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		View v = convertView;

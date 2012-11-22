@@ -14,7 +14,6 @@
 
     <LinearLayout
         android:id="@+id/main_content"
-        android:descendantFocusability="beforeDescendants"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical" >
@@ -23,6 +22,7 @@
             xmlns:android="http://schemas.android.com/apk/res/android"
             xmlns:tools="http://schemas.android.com/tools"
             android:layout_width="match_parent"
+            android:background="@android:color/black"
             android:layout_height="match_parent" >
 
             <LinearLayout
@@ -43,7 +43,7 @@
             <ListView
                 android:id="@+id/main_thread_list"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_alignParentBottom="true"
                 android:layout_below="@id/top_bar"
                 android:divider="@android:color/black"

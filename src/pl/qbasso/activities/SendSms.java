@@ -1,3 +1,6 @@
+/*
+ * @author JPorzuczek
+ */
 package pl.qbasso.activities;
 
 import pl.qbasso.custom.ContactsAdapter;
@@ -9,10 +12,16 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AutoCompleteTextView;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class SendSms.
+ */
 public class SendSms extends Activity {
 
+	/** The input. */
 	private AutoCompleteTextView input;
 	
+	/** The item click listener. */
 	private OnItemClickListener itemClickListener = new OnItemClickListener() {
 
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
@@ -21,6 +30,9 @@ public class SendSms extends Activity {
 		}
 	};
 
+	/* (non-Javadoc)
+	 * @see android.app.Activity#onCreate(android.os.Bundle)
+	 */
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);

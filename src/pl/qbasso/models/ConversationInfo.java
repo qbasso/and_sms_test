@@ -1,17 +1,31 @@
+/*
+ * @author JPorzuczek
+ */
 package pl.qbasso.models;
 
 import java.io.Serializable;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class ConversationInfo.
+ */
 public class ConversationInfo implements Serializable {
 
-	/**
-	 * 
-	 */
+	/** The Constant serialVersionUID. */
 	private static final long serialVersionUID = 1L;
+	
+	/** The address. */
 	private String address;
+	
+	/** The thread id. */
 	private long threadId;
+	
+	/** The display name. */
 	private String displayName;
 
+	/**
+	 * Instantiates a new conversation info.
+	 */
 	public ConversationInfo() {
 	}
 	

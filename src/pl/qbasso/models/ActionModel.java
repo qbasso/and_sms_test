@@ -1,18 +1,38 @@
+/*
+ * @author JPorzuczek
+ */
 package pl.qbasso.models;
 
 import android.os.Bundle;
 
+// TODO: Auto-generated Javadoc
 /**
- * @author Jakub.Porzuczek
+ * The Class ActionModel.
  *
+ * @author Jakub.Porzuczek
  */
 public class ActionModel {
 
+	/** The title. */
 	private String title;
+	
+	/** The res id. */
 	private int resId;
+	
+	/** The action id. */
 	private int actionId;
+	
+	/** The action data. */
 	private Bundle actionData;
 
+	/**
+	 * Instantiates a new action model.
+	 *
+	 * @param title the title
+	 * @param resId the res id
+	 * @param actionId the action id
+	 * @param b the b
+	 */
 	public ActionModel(String title, int resId, int actionId, Bundle b) {
 		this.title = title;
 		this.resId = resId;

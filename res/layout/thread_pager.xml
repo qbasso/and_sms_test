@@ -10,6 +10,18 @@
         android:layout_height="0dp"
         android:layout_above="@+id/sms_thread_send_bar"
         android:layout_alignParentTop="true" >
+
+        <android.support.v4.view.PagerTabStrip
+            android:id="@+id/content_pages_strip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/tab_strip_bg"
+            android:textColor="#1763CF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_gravity="top"
+            android:layout_marginBottom="8dp" >
+        </android.support.v4.view.PagerTabStrip>
     </android.support.v4.view.ViewPager>
 
     <LinearLayout

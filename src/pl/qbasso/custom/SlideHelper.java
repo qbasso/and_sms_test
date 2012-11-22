@@ -1,11 +1,17 @@
+/*
+ * @author JPorzuczek
+ */
 package pl.qbasso.custom;
 
 import pl.qbasso.interfaces.SlidingViewLoadedListener;
 import pl.qbasso.smssender.R;
 import android.app.Activity;
 import android.graphics.Rect;
+import android.os.Handler;
+import android.os.Message;
 import android.view.Gravity;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
@@ -15,25 +21,73 @@ import android.widget.FrameLayout;
 import android.widget.FrameLayout.LayoutParams;
 import android.widget.LinearLayout;
 import android.widget.ListAdapter;
+import android.widget.RelativeLayout;
 
-
+// TODO: Auto-generated Javadoc
 /**
- * @author Jakub.Porzuczek
- *	if status bar is visible id didn't move it to the right, it only slides window content.
+ * The Class SlideHelper.
+ * 
+ * @author Jakub.Porzuczek if status bar is visible id didn't move it to the
+ *         right, it only slides window content.
  */
 public class SlideHelper {
+
+	/** The m act. */
 	private Activity mAct;
+
+	/** The m menu res id. */
 	private int mMenuResId;
+
+	/** The m menu view. */
 	private View mMenuView;
-	private final static double MENU_WIDTH = 0.8;
-	private static int menuSizePx;
+
+	/** The Constant MENU_WIDTH. */
+	public final static double MENU_WIDTH = 0.8;
+
+	/** The menu size px. */
+	public static int menuSizePx;
+
+	/** The content. */
 	private LinearLayout content;
+
+	/** The menu. */
 	private LinearLayout menu;
+
+	/** The menu shown. */
 	private boolean menuShown = false;
+
+	/** The slide action bar. */
 	private boolean slideActionBar;
+
+	/** The m action bar container. */
 	private ViewGroup mActionBarContainer;
+
+	/** The sliding view loaded listener. */
 	private SlidingViewLoadedListener slidingViewLoadedListener;
+
+	/** The status bar visible. */
 	private boolean statusBarVisible = false;
+	private int currentContentMargin;
+
+	private static final int ANIMATION_DURATION = 700;
+	private static int screenSizePx;
+
+	private static final int GESTURE_THRESHOLD = 5;
+	private static final int MODE_DRAG = 0;
+	private static final int MODE_OTHER = 1;
+
+	private int touchMode;
+	float previousX;
+	float startX;
+	float diff;
+
+	private Handler h = new Handler() {
+		@Override
+		public void handleMessage(Message m) {
+			afterDragShowAction();
+		}
+
+	};
 
 	public boolean isMenuShown() {
 		return menuShown;
@@ -43,6 +97,7 @@ public class SlideHelper {
 		this.menuShown = mIsMenuShown;
 	}
 
+	/** The m content click listener. */
 	private OnClickListener mContentClickListener = new OnClickListener() {
 		public void onClick(View v) {
 			if (menuShown) {
@@ -55,19 +110,34 @@ public class SlideHelper {
 		}
 	};
 
+	/**
+	 * Instantiates a new slide helper.
+	 * 
+	 * @param act
+	 *            the act
+	 * @param menuResId
+	 *            the menu res id
+	 */
 	public SlideHelper(Activity act, int menuResId) {
 		this.mAct = act;
 		this.mMenuResId = menuResId;
 		menu = (LinearLayout) mAct.findViewById(R.id.main_menu);
 		content = (LinearLayout) mAct.findViewById(R.id.main_content);
-		mActionBarContainer = (ViewGroup) mAct.findViewById(android.R.id.content)
-				.getParent();
+		mActionBarContainer = (ViewGroup) mAct.findViewById(
+				android.R.id.content).getParent();
 		Rect r = new Rect();
 		mAct.getWindow().getDecorView().getWindowVisibleDisplayFrame(r);
+		screenSizePx = r.right - r.left;
 		menuSizePx = (int) ((r.right - r.left) * MENU_WIDTH);
 		inflateMenu(mMenuResId);
 	}
 
+	/**
+	 * Inflate menu.
+	 * 
+	 * @param menuResId
+	 *            the menu res id
+	 */
 	private void inflateMenu(int menuResId) {
 		LayoutInflater inflater = (LayoutInflater) mAct
 				.getSystemService(Activity.LAYOUT_INFLATER_SERVICE);
@@ -75,7 +145,14 @@ public class SlideHelper {
 
 	}
 
+	/**
+	 * Show menu.
+	 * 
+	 * @param slideActionBar
+	 *            the slide action bar
+	 */
 	public void showMenu(boolean slideActionBar) {
+		currentContentMargin = menuSizePx;
 		if (slideActionBar) {
 			showMenuSlidingActionBar();
 		} else {
@@ -83,6 +160,9 @@ public class SlideHelper {
 		}
 	}
 
+	/**
+	 * Show menu sliding action bar.
+	 */
 	private void showMenuSlidingActionBar() {
 		android.widget.FrameLayout.LayoutParams params = (android.widget.FrameLayout.LayoutParams) mActionBarContainer
 				.getLayoutParams();
@@ -100,15 +180,17 @@ public class SlideHelper {
 		mActionBarContainer.setOnClickListener(mContentClickListener);
 	}
 
+	/**
+	 * Show menu.
+	 */
 	private void showMenu() {
 		android.widget.RelativeLayout.LayoutParams params = (android.widget.RelativeLayout.LayoutParams) content
 				.getLayoutParams();
 		params.setMargins(menuSizePx, 0, -menuSizePx, 0);
 		content.setLayoutParams(params);
 		TranslateAnimation ta = new TranslateAnimation(-menuSizePx, 0, 0, 0);
-		ta.setDuration(500);
+		ta.setDuration(ANIMATION_DURATION);
 		content.startAnimation(ta);
-		
 		params = (android.widget.RelativeLayout.LayoutParams) menu
 				.getLayoutParams();
 		params.width = menuSizePx;
@@ -116,13 +198,19 @@ public class SlideHelper {
 		ViewGroup.LayoutParams p = mMenuView.getLayoutParams();
 		p = new ViewGroup.LayoutParams(menuSizePx, -1);
 		mMenuView.setLayoutParams(p);
-		menu.addView(mMenuView);		
+		menu.removeAllViews();
+		menu.addView(mMenuView);
 		menu.startAnimation(ta);
 		menuShown = true;
-		content.setOnClickListener(mContentClickListener);
 		slidingViewLoadedListener.onViewLoaded();
 	}
 
+	/**
+	 * Hide menu.
+	 * 
+	 * @param slideActionBar
+	 *            the slide action bar
+	 */
 	public void hideMenu(boolean slideActionBar) {
 		if (slideActionBar) {
 			hideMenuSlidingActionBar();
@@ -131,6 +219,9 @@ public class SlideHelper {
 		}
 	}
 
+	/**
+	 * Hide menu sliding action bar.
+	 */
 	private void hideMenuSlidingActionBar() {
 		TranslateAnimation ta = new TranslateAnimation(0, -menuSizePx, 0, 0);
 		ta.setDuration(500);
@@ -147,24 +238,20 @@ public class SlideHelper {
 		menuShown = false;
 	}
 
+	/**
+	 * Hide menu.
+	 */
 	private void hideMenu() {
 		TranslateAnimation ta = new TranslateAnimation(0, -menuSizePx, 0, 0);
-		ta.setDuration(500);
-		android.widget.RelativeLayout.LayoutParams params = (android.widget.RelativeLayout.LayoutParams) menu
-				.getLayoutParams();
-		params.width = 0;
+		ta.setDuration(ANIMATION_DURATION);
 		menu.startAnimation(ta);
-
-		menu.setLayoutParams(params);
 		ta = new TranslateAnimation(menuSizePx, 0, 0, 0);
-		ta.setDuration(500);
-		content.setOnClickListener(null);
+		ta.setDuration(ANIMATION_DURATION);
 		content.startAnimation(ta);
-		params = (android.widget.RelativeLayout.LayoutParams) content
+		android.widget.RelativeLayout.LayoutParams params = (android.widget.RelativeLayout.LayoutParams) content
 				.getLayoutParams();
 		params.setMargins(0, 0, 0, 0);
 		content.setLayoutParams(params);
-		menu.removeView(mMenuView);
 		menuShown = false;
 	}
 
@@ -194,6 +281,80 @@ public class SlideHelper {
 
 	public void setStatusBarVisible(boolean statusBarVisible) {
 		this.statusBarVisible = statusBarVisible;
+	}
+
+	public boolean handleTouchEvent(MotionEvent ev) {
+		if (menuShown
+				&& ((ev.getX() > SlideHelper.menuSizePx && ev.getHistorySize() == 0) || (touchMode == MODE_DRAG))) {
+			int tempDiff;
+			if (ev.getAction() == MotionEvent.ACTION_DOWN
+					&& ev.getX() > SlideHelper.menuSizePx) {
+				touchMode = MODE_DRAG;
+				startX = previousX = ev.getX();
+			} else if (touchMode == MODE_DRAG
+					&& ev.getAction() == MotionEvent.ACTION_UP) {
+				tempDiff = (int) Math.abs(startX - ev.getX());
+				if (tempDiff > GESTURE_THRESHOLD) {
+					if (previousX < screenSizePx / 2) {
+						hideAfterDrag();
+					} else {
+						showAfterDrag();
+					}
+				} else {
+					hideMenu(false);
+				}
+				touchMode = MODE_OTHER;
+			} else if (touchMode == MODE_DRAG) {
+				diff = previousX - ev.getX();
+				previousX = ev.getX();
+				pullContent(-diff);
+			} else if (MotionEvent.ACTION_UP == ev.getAction()
+					&& ev.getX() == previousX) {
+				hideMenu(false);
+			}
+			return true;
+		}
+		return false;
+	}
+
+	public void pullContent(float direction) {
+		if (currentContentMargin + direction < menuSizePx) {
+			currentContentMargin += (int) direction;
+			content.bringToFront();
+			RelativeLayout.LayoutParams params = (android.widget.RelativeLayout.LayoutParams) content
+					.getLayoutParams();
+			params.setMargins(currentContentMargin, 0, -currentContentMargin, 0);
+			content.setLayoutParams(params);
+		}
+	}
+
+	public void hideAfterDrag() {
+		TranslateAnimation ta = new TranslateAnimation(currentContentMargin, 0,
+				0, 0);
+		ta.setDuration((int) (((float) currentContentMargin / (float) screenSizePx) * ANIMATION_DURATION));
+		content.startAnimation(ta);
+		RelativeLayout.LayoutParams params = (android.widget.RelativeLayout.LayoutParams) content
+				.getLayoutParams();
+		params.setMargins(0, 0, 0, 0);
+		content.setLayoutParams(params);
+		menuShown = false;
+	}
+
+	public void showAfterDrag() {
+		int duration = (int) (((float) currentContentMargin / (float) screenSizePx) * ANIMATION_DURATION);
+		TranslateAnimation ta = new TranslateAnimation(0, menuSizePx
+				- currentContentMargin, 0, 0);
+		ta.setDuration(duration);
+		content.startAnimation(ta);
+		h.sendEmptyMessageDelayed(0, duration);
+	}
+
+	private void afterDragShowAction() {
+		RelativeLayout.LayoutParams params = (android.widget.RelativeLayout.LayoutParams) content
+				.getLayoutParams();
+		params.setMargins(menuSizePx, 0, -menuSizePx, 0);
+		content.setLayoutParams(params);
+		currentContentMargin = menuSizePx;
 	}
 
 }

@@ -4,8 +4,7 @@
     <string name="hello_world">Hello world!</string>
     <string name="menu_settings">Settings</string>
     <string name="title_activity_main">MainActivity</string>
-    <string name="message_body">&lt;b>%1$s:&lt;/b> %2$s</string>
-    <string name="sending_in_progress_label">Message will be sent to %1$s in %2$d s</string>
+    <string name="message_body">&lt;b>%1$s:&lt;/b> %2$s</string>    
     <string name="action_delete_message">Usuń</string>
     <string name="action_delete_thread">Usuń wątek</string>
     <string name="action_forward">Prześlij</string>
@@ -16,6 +15,9 @@
     <string name="send_sms_send_label">Wyślij</string>
     <string-array name="conversation_actions">
         <item >Usuń wątek</item>
+        <item >Dodaj kontakt</item>
     </string-array>
+    <color name="red">#AAFF0000</color>
+    <color name="blue">#BB0C67E8</color>
 
 </resources>

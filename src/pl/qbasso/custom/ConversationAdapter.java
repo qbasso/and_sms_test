@@ -1,3 +1,6 @@
+/*
+ * @author JPorzuczek
+ */
 package pl.qbasso.custom;
 
 import java.util.List;
@@ -13,19 +16,45 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class ConversationAdapter.
+ */
 public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 
+	/** The resource id. */
 	private int resourceId;
+	
+	/** The items. */
 	private List<ConversationModel> items;
+	
+	/** The inflater. */
 	private LayoutInflater inflater;
+	
+	/** The holder. */
 	private ItemViewHolder holder;
+	
+	/** The ctx. */
 	private Context ctx;
 
+	/**
+	 * The Class ItemViewHolder.
+	 */
 	private static class ItemViewHolder {
+		
+		/** The contact name. */
 		TextView contactName;
+		
+		/** The message snippet. */
 		TextView messageSnippet;
+		
+		/** The background. */
 		LinearLayout background;
+		
+		/** The unread count. */
 		TextView unreadCount;
+		
+		/** The unread icon. */
 		RelativeLayout unreadIcon;
 	}
 
@@ -34,11 +63,17 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 		return items.size();
 	}
 
+	/* (non-Javadoc)
+	 * @see android.widget.ArrayAdapter#getItem(int)
+	 */
 	@Override
 	public ConversationModel getItem(int position) {
 		return items.get(position);
 	}
 
+	/* (non-Javadoc)
+	 * @see android.widget.ArrayAdapter#getView(int, android.view.View, android.view.ViewGroup)
+	 */
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		View view = convertView;
@@ -75,6 +110,11 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 		return view;
 	}
 
+	/**
+	 * Initialize holder.
+	 *
+	 * @param view the view
+	 */
 	private void initializeHolder(View view) {
 		holder = new ItemViewHolder();
 		holder.contactName = (TextView) view
@@ -89,6 +129,13 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 				.findViewById(R.id.thread_item_unread_icon);
 	}
 
+	/**
+	 * Instantiates a new conversation adapter.
+	 *
+	 * @param context the context
+	 * @param textViewResourceId the text view resource id
+	 * @param objects the objects
+	 */
 	public ConversationAdapter(Context context, int textViewResourceId,
 			List<ConversationModel> objects) {
 		super(context, textViewResourceId, objects);

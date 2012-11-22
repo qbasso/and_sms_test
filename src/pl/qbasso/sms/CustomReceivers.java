@@ -1,3 +1,6 @@
+/*
+ * @author JPorzuczek
+ */
 package pl.qbasso.sms;
 
 import pl.qbasso.models.SmsModel;
@@ -8,10 +11,23 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Handler;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class CustomReceivers.
+ */
 public class CustomReceivers {
+	
+	/**
+	 * The Class SmsSentReceiver.
+	 */
 	public static class SmsSentReceiver extends BroadcastReceiver {
+		
+		/** The m handler. */
 		private Handler mHandler = new Handler();
 
+		/* (non-Javadoc)
+		 * @see android.content.BroadcastReceiver#onReceive(android.content.Context, android.content.Intent)
+		 */
 		@Override
 		public void onReceive(final Context arg0, Intent intent) {
 			SmsModel m = null;
@@ -22,6 +38,12 @@ public class CustomReceivers {
 			}
 		}
 
+		/**
+		 * Handle action resend.
+		 *
+		 * @param arg0 the arg0
+		 * @param intent the intent
+		 */
 		private void handleActionResend(final Context arg0, Intent intent) {
 			SmsModel m;
 			SmsSendHelper h = new SmsSendHelper();
@@ -31,6 +53,12 @@ public class CustomReceivers {
 			h.sendText(arg0, data, false);
 		}
 
+		/**
+		 * Handle action send.
+		 *
+		 * @param arg0 the arg0
+		 * @param intent the intent
+		 */
 		private void handleActionSend(final Context arg0, Intent intent) {
 		
 			switch (getResultCode()) {
@@ -43,6 +71,12 @@ public class CustomReceivers {
 			}
 		}
 
+		/**
+		 * Send action failed.
+		 *
+		 * @param arg0 the arg0
+		 * @param intent the intent
+		 */
 		private void sendActionFailed(final Context arg0, Intent intent) {
 			SmsModel m;
 			SmsDbHelper smsAccessor = new SmsDbHelper(
@@ -75,6 +109,12 @@ public class CustomReceivers {
 			}
 		}
 
+		/**
+		 * Send action ok.
+		 *
+		 * @param arg0 the arg0
+		 * @param intent the intent
+		 */
 		private void sendActionOk(final Context arg0, Intent intent) {
 			SmsModel m;
 			SmsDbHelper smsAccessor = new SmsDbHelper(
@@ -103,8 +143,14 @@ public class CustomReceivers {
 		}
 	}
 
+	/**
+	 * The Class SmsDeliveredReceiver.
+	 */
 	public class SmsDeliveredReceiver extends BroadcastReceiver {
 
+		/* (non-Javadoc)
+		 * @see android.content.BroadcastReceiver#onReceive(android.content.Context, android.content.Intent)
+		 */
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			switch (getResultCode()) {

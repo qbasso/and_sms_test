@@ -17,8 +17,6 @@ import pl.qbasso.sms.SmsSendHelper;
 import pl.qbasso.smssender.R;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.AlertDialog.Builder;
-import android.app.Dialog;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -34,12 +32,20 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.support.v4.app.DialogFragment;
+import android.provider.ContactsContract.Contacts;
+import android.provider.ContactsContract.Intents.Insert;
+import android.util.DisplayMetrics;
+import android.view.GestureDetector;
+import android.view.GestureDetector.OnGestureListener;
+import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.Menu;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -47,46 +53,142 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 /**
- * @author jakub.porzuczek
+ * The Class ConversationList.
  * 
+ * @author jakub.porzuczek
  */
 public class ConversationList extends Activity {
 
+	/**
+	 * The Constant EXTRA_CLIENT_ID. Used when passing intent extra client id to
+	 * message sending service
+	 */
 	protected static final String EXTRA_CLIENT_ID = "client_id";
+
+	/** Provides access to sms database */
 	private SmsDbHelper smsAccessor;
+
+	/** holds reference to conversation list */
 	private ListView smsThreadList;
+
+	/** Holds conversation items */
 	private List<ConversationModel> items;
+
+	/** The ctx. */
 	private Context ctx;
+
+	/** The pd. */
 	private ProgressDialog pd;
+
+	/** Reference to create new button. */
 	private Button composeButton;
+
+	/** The contact input. */
 	private AutoCompleteTextView contactInput;
+
+	/** The message input. */
 	private EditText messageInput;
-	private SlideHelper slideHeper;
+
+	/** Used to slide new message window */
+	private SlideHelper slideHelper;
+
+	/** The send sms button. */
 	private Button sendSmsButton;
+
+	/** The need refresh. */
 	public static boolean NEED_REFRESH = false;
+
+	/** The message length. */
 	protected TextView messageLength;
+
+	/** The messenger. */
 	private Messenger messenger;
+
+	/** The m service. */
 	private Messenger mService;
 
-	private DialogFragment longClickDialog = new DialogFragment() {
+	/** The client id. */
+	private String clientId;
 
-		@Override
-		public Dialog onCreateDialog(Bundle savedInstanceState) {
-			AlertDialog.Builder b = new Builder(ctx);
-			b.setItems(R.array.conversation_actions, dialogItemClickListener );
-			return super.onCreateDialog(savedInstanceState);
+	/** The conversation adapter. */
+	private ConversationAdapter conversationAdapter;
+
+	private int screenWidthPx;
+
+	private static final int GESTURE_THRESHOLD = 5;
+	private static final int MODE_DRAG = 0;
+	private static final int MODE_OTHER = 1;
+
+	private int touchMode;
+	float previousX;
+	float startX;
+	float diff;
+
+	/** The item long click listener. */
+	private OnItemLongClickListener itemLongClckListener = new OnItemLongClickListener() {
+
+		public boolean onItemLongClick(AdapterView<?> arg0, final View v,
+				int arg2, long arg3) {
+			final ConversationModel item = items.get(arg2);
+			AlertDialog.Builder b = new AlertDialog.Builder(ctx);
+			b.setItems(R.array.conversation_actions,
+					new DialogInterface.OnClickListener() {
+						public void onClick(DialogInterface arg0, int arg1) {
+							switch (arg1) {
+							case 0:
+								actionDeleteThread(v, item);
+								break;
+							case 1:
+								actionAddContact(item);
+								arg0.dismiss();
+								break;
+							default:
+								break;
+							}
+						}
+					});
+			b.create().show();
+			return false;
 		}
-		
-	};
-	
-	protected OnItemClickListener autoCompleteItemListener = new OnItemClickListener() {
-
-		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
-				long arg3) {
-		}
 	};
 
+	/**
+	 * start activity to add new contact or edit if it exists
+	 * 
+	 * @param item
+	 *            holding data about conversation
+	 */
+	private void actionAddContact(ConversationModel item) {
+		Intent insert = new Intent(Intent.ACTION_INSERT_OR_EDIT);
+		insert.setType(Contacts.CONTENT_ITEM_TYPE);
+		insert.putExtra(Insert.PHONE, item.getAddress());
+		startActivityForResult(insert, 0);
+	}
 
+	/**
+	 * delete conversation, it's row and play animation
+	 * 
+	 * @param v
+	 *            view to animate
+	 * @param item
+	 *            conversation model
+	 */
+	private void actionDeleteThread(View v, final ConversationModel item) {
+		smsAccessor.deleteThread(item.getThreadId());
+		v.startAnimation(AnimationUtils.loadAnimation(ctx,
+				R.anim.collapse_from_bottom));
+		mainHandler.postDelayed(new Runnable() {
+			public void run() {
+				items.remove(item);
+				conversationAdapter.notifyDataSetChanged();
+			}
+		}, 350);
+	}
+
+	/**
+	 * handles response from service whether there are some messages that wait
+	 * to be sent
+	 */
 	private Handler incomingHandler = new Handler() {
 		@Override
 		public void handleMessage(Message m) {
@@ -100,11 +202,13 @@ public class ConversationList extends Activity {
 				startActivity(startMain);
 				break;
 			default:
+
 				break;
 			}
 		}
 	};
 
+	/** The connection. */
 	private ServiceConnection connection = new ServiceConnection() {
 		public void onServiceDisconnected(ComponentName name) {
 			mService = null;
@@ -125,6 +229,7 @@ public class ConversationList extends Activity {
 		}
 	};
 
+	/** The send button listener. */
 	protected OnClickListener sendButtonListener = new OnClickListener() {
 		public void onClick(View arg0) {
 			String sender = contactInput.getText().toString();
@@ -134,9 +239,15 @@ public class ConversationList extends Activity {
 
 	};
 
+	/** The update receiver. */
 	private BroadcastReceiver updateReceiver;
-	protected ContactsAdapter adapter;
 
+	/** The contacts adapter. */
+	protected ContactsAdapter contactsAdapter;
+
+	/**
+	 * Inits the receivers.
+	 */
 	private void initReceivers() {
 		if (updateReceiver == null) {
 			updateReceiver = new BroadcastReceiver() {
@@ -144,8 +255,8 @@ public class ConversationList extends Activity {
 				public void onReceive(Context context, Intent intent) {
 					if (intent.getAction().equals(SmsSendHelper.ACTION_UPDATE)) {
 						updateItems();
-						if (slideHeper.isMenuShown()) {
-							slideHeper.hideMenu(false);
+						if (slideHelper.isMenuShown()) {
+							slideHelper.hideMenu(false);
 							contactInput.getText().clear();
 							messageInput.getText().clear();
 						}
@@ -170,15 +281,14 @@ public class ConversationList extends Activity {
 				SmsSendHelper.ACTION_UPDATE));
 	}
 
+	/** The listener. */
 	private SlidingViewLoadedListener listener = new SlidingViewLoadedListener() {
 
 		public void onViewLoaded() {
 			contactInput = (AutoCompleteTextView) findViewById(R.id.recipient_input);
-			adapter = new ContactsAdapter(ctx, R.layout.contact_item);
-			contactInput.setAdapter(adapter);
-
+			contactsAdapter = new ContactsAdapter(ctx, R.layout.contact_item);
+			contactInput.setAdapter(contactsAdapter);
 			contactInput.setThreshold(1);
-			contactInput.setOnItemClickListener(autoCompleteItemListener);
 			messageLength = (TextView) findViewById(R.id.sms_thread_sms_length);
 			messageInput = (EditText) findViewById(R.id.sms_thread_sms_input);
 			messageInput.addTextChangedListener(new SmsLengthWatcher(ctx,
@@ -188,6 +298,11 @@ public class ConversationList extends Activity {
 		}
 	};
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onResume()
+	 */
 	@Override
 	protected void onResume() {
 		super.onResume();
@@ -199,17 +314,19 @@ public class ConversationList extends Activity {
 		}
 	}
 
+	/** The main handler. */
 	private Handler mainHandler = new Handler() {
 		@Override
 		public void handleMessage(Message m) {
-			ConversationAdapter adapter = new ConversationAdapter(ctx,
+			conversationAdapter = new ConversationAdapter(ctx,
 					R.layout.conversation_item, items);
 			smsThreadList.setOnItemClickListener(smsThreadClickListener);
-			smsThreadList.setAdapter(adapter);
+			smsThreadList.setAdapter(conversationAdapter);
 			pd.dismiss();
 		}
 	};
 
+	/** The sms thread click listener. */
 	private OnItemClickListener smsThreadClickListener = new OnItemClickListener() {
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {
@@ -217,17 +334,21 @@ public class ConversationList extends Activity {
 		}
 
 	};
+
+	/** The compose button listener. */
 	private OnClickListener composeButtonListener = new OnClickListener() {
 		public void onClick(View v) {
-			if (!slideHeper.isMenuShown()) {
-				slideHeper.showMenu(false);
+			if (!slideHelper.isMenuShown()) {
+				slideHelper.showMenu(false);
 			} else {
-				slideHeper.hideMenu(false);
+				slideHelper.hideMenu(false);
 			}
 		}
 	};
-	private String clientId;
 
+	/**
+	 * Update items.
+	 */
 	private void updateItems() {
 		showProgressDialog();
 		new Thread(new Runnable() {
@@ -238,6 +359,11 @@ public class ConversationList extends Activity {
 		}).start();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onCreate(android.os.Bundle)
+	 */
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -247,24 +373,39 @@ public class ConversationList extends Activity {
 		messenger = new Messenger(incomingHandler);
 		bindService(new Intent(ctx, SendTaskService.class), connection,
 				BIND_AUTO_CREATE);
-		slideHeper = new SlideHelper(this, R.layout.send_sms_screen);
-		slideHeper.setSlidingViewLoadedListener(listener);
+		slideHelper = new SlideHelper(this, R.layout.send_sms_screen);
+		slideHelper.setSlidingViewLoadedListener(listener);
 		smsThreadList = (ListView) findViewById(R.id.main_thread_list);
 		smsThreadList.setOnItemClickListener(smsThreadClickListener);
+		smsThreadList.setOnItemLongClickListener(itemLongClckListener);
 		smsAccessor = new SmsDbHelper(getContentResolver());
 		composeButton = (Button) findViewById(R.id.button_compose_new);
 		composeButton.setOnClickListener(composeButtonListener);
+		DisplayMetrics metrics = new DisplayMetrics();
+		getWindow().getWindowManager().getDefaultDisplay().getMetrics(metrics);
+		screenWidthPx = metrics.widthPixels;
 		pd = new ProgressDialog(ctx);
 		showProgressDialog();
 		updateItems();
 	}
 
+	/**
+	 * Show progress dialog.
+	 */
 	private void showProgressDialog() {
 		pd.setMessage("Please wait...");
 		pd.setCancelable(false);
 		pd.show();
 	}
 
+	/**
+	 * Start sms conversation activity.
+	 * 
+	 * @param arg2
+	 *            the arg2
+	 * @param send
+	 *            the send
+	 */
 	private void startSmsConversationActivity(int arg2, boolean send) {
 		Intent i = new Intent(ctx, SmsConversationActivity.class);
 		i.putExtra("threadList", items.toArray());
@@ -275,16 +416,26 @@ public class ConversationList extends Activity {
 		startActivity(i);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onCreateOptionsMenu(android.view.Menu)
+	 */
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		getMenuInflater().inflate(R.menu.activity_main, menu);
 		return true;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onBackPressed()
+	 */
 	@Override
 	public void onBackPressed() {
-		if (slideHeper.isMenuShown()) {
-			slideHeper.hideMenu(false);
+		if (slideHelper.isMenuShown()) {
+			slideHelper.hideMenu(false);
 		} else {
 			if (isTaskRoot()) {
 				try {
@@ -303,26 +454,53 @@ public class ConversationList extends Activity {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onPause()
+	 */
 	@Override
 	protected void onPause() {
 		unregisterReceiver(updateReceiver);
 		super.onPause();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onDestroy()
+	 */
 	@Override
 	protected void onDestroy() {
+		try {
+			Message m = Message.obtain(null, SendTaskService.UNREGISTER);
+			Bundle b = new Bundle();
+			b.putString(EXTRA_CLIENT_ID, clientId);
+			m.setData(b);
+			mService.send(m);
+		} catch (RemoteException e) {
+			e.printStackTrace();
+		}
 		unbindService(connection);
-
 		super.onDestroy();
 	}
 
+	/**
+	 * Send message from main screen.
+	 * 
+	 * @param sender
+	 *            the sender
+	 * @param body
+	 *            the body
+	 */
 	private void sendMessageFromMainScreen(String sender, String body) {
 		if (body.length() > 0 && sender.length() > 0) {
 			SmsModel m = new SmsModel(0, -1, contactInput.getText().toString(),
 					"", System.currentTimeMillis(), messageInput.getText()
 							.toString(), SmsModel.MESSAGE_TYPE_SENT,
 					SmsModel.MESSAGE_READ, SmsModel.STATUS_WAITING);
-			m.setAddressDisplayName(adapter.getCurrentlySelectedDisplayName() != null ? adapter
+			m.setAddressDisplayName(contactsAdapter
+					.getCurrentlySelectedDisplayName() != null ? contactsAdapter
 					.getCurrentlySelectedDisplayName() : m.getAddress());
 			Uri u = smsAccessor.insertSms(SmsDbHelper.SMS_URI, m);
 			long threadId = smsAccessor.getThreadIdForSmsUri(u);
@@ -343,4 +521,26 @@ public class ConversationList extends Activity {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.app.Activity#onActivityResult(int, int,
+	 * android.content.Intent)
+	 */
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (requestCode == 0 && resultCode == Activity.RESULT_OK) {
+			updateItems();
+		}
+	}
+
+	@Override
+	public boolean dispatchTouchEvent(MotionEvent ev) {
+		boolean result = slideHelper.handleTouchEvent(ev);
+		if (result) {
+			return result;
+		} else {
+			return super.dispatchTouchEvent(ev);
+		}
+	}
 }

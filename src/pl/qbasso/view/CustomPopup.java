@@ -1,3 +1,6 @@
+/*
+ * @author JPorzuczek
+ */
 package pl.qbasso.view;
 
 import java.util.ArrayList;
@@ -22,49 +25,42 @@ import android.widget.PopupWindow;
 import android.widget.PopupWindow.OnDismissListener;
 import android.widget.TextView;
 
+// TODO: Auto-generated Javadoc
 /**
+ * The Class CustomPopup.
+ *
  * @author jakub.porzuczek
- * 
  */
 public class CustomPopup {
 
-	/**
-	 * 
-	 */
+	/** The m anchor. */
 	private View mAnchor;
-	/**
-	 * 
-	 */
+	
+	/** The m ctx. */
 	private Context mCtx;
-	/**
-	 * 
-	 */
+	
+	/** The m window. */
 	private PopupWindow mWindow;
-	/**
-	 * 
-	 */
+	
+	/** The m inflater. */
 	private LayoutInflater mInflater;
-	/**
-	 * 
-	 */
+	
+	/** The m window manager. */
 	private WindowManager mWindowManager;
-	/**
-	 * 
-	 */
+	
+	/** The m popup root view. */
 	private View mPopupRootView;
-	/**
-	 * 
-	 */
+	
+	/** The m actions view. */
 	private ViewGroup mActionsView;
-	/**
-	 * 
-	 */
+	
+	/** The m action click listener. */
 	private ActionClickListener mActionClickListener;
-	/**
-	 * 
-	 */
+	
+	/** The m action list. */
 	private List<ActionModel> mActionList;
 
+	/** The m touch interceptor. */
 	private OnTouchListener mTouchInterceptor = new OnTouchListener() {
 
 		public boolean onTouch(View v, MotionEvent event) {
@@ -78,8 +74,10 @@ public class CustomPopup {
 	};
 
 	/**
-	 * @param c
-	 * @param rootView
+	 * Instantiates a new custom popup.
+	 *
+	 * @param c the c
+	 * @param rootView the root view
 	 */
 	public CustomPopup(Context c, View rootView) {
 		mAnchor = rootView;
@@ -91,6 +89,11 @@ public class CustomPopup {
 		initPopup(c);
 	}
 
+	/**
+	 * Inits the popup.
+	 *
+	 * @param c the c
+	 */
 	private void initPopup(Context c) {
 		mWindow = new PopupWindow(c);
 		mWindow.setBackgroundDrawable(new BitmapDrawable());
@@ -119,7 +122,9 @@ public class CustomPopup {
 	}
 
 	/**
-	 * @param a
+	 * Adds the action.
+	 *
+	 * @param a the a
 	 */
 	public void addAction(ActionModel a) {
 		final int actionId = a.getActionId();
@@ -144,7 +149,7 @@ public class CustomPopup {
 	}
 
 	/**
-	 * 
+	 * Show.
 	 */
 	public void show() {
 		boolean bottom = true;
@@ -172,7 +177,9 @@ public class CustomPopup {
 	}
 
 	/**
-	 * @param mActionClickListener
+	 * Sets the m action click listener.
+	 *
+	 * @param mActionClickListener the new m action click listener
 	 */
 	public void setmActionClickListener(ActionClickListener mActionClickListener) {
 		this.mActionClickListener = mActionClickListener;

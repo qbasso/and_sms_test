@@ -1,3 +1,6 @@
+/*
+ * @author JPorzuczek
+ */
 package pl.qbasso.sms;
 
 import java.util.ArrayList;
@@ -11,20 +14,55 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract.PhoneLookup;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class SmsDbHelper.
+ */
 public class SmsDbHelper {
+
+	/** The Constant SMS_URI. */
 	public static final Uri SMS_URI = Uri.parse("content://sms");
+
+	/** The Constant SMS_OUTBOX_URI. */
 	public static final Uri SMS_OUTBOX_URI = Uri.parse("content://sms/sent");
+
+	/** The Constant SMS_INBOX_URI. */
 	public static final Uri SMS_INBOX_URI = Uri.parse("content://sms/inbox");
+
+	/** The Constant SMS_DRAFT_URI. */
 	public static final Uri SMS_DRAFT_URI = Uri.parse("content://sms/draft");
+
+	/** The Constant SMS_CONVERSATIONS_URI. */
 	public static final Uri SMS_CONVERSATIONS_URI = Uri
 			.parse("content://sms/conversations");
+
+	/** The Constant SMS_SORT_ORDER. */
 	public static final String SMS_SORT_ORDER = "date DESC";
+
+	/** The resolver. */
 	private ContentResolver resolver;
 
+	/**
+	 * Instantiates a new sms db helper.
+	 * 
+	 * @param r
+	 *            the r
+	 */
 	public SmsDbHelper(ContentResolver r) {
 		this.resolver = r;
 	}
 
+	/**
+	 * Update sms status.
+	 * 
+	 * @param u
+	 *            the u
+	 * @param smsStatus
+	 *            the sms status
+	 * @param smsType
+	 *            the sms type
+	 * @return the int
+	 */
 	public int updateSmsStatus(Uri u, int smsStatus, int smsType) {
 		int result;
 		ContentValues values = new ContentValues();
@@ -38,6 +76,15 @@ public class SmsDbHelper {
 		return result;
 	}
 
+	/**
+	 * Insert sms.
+	 * 
+	 * @param u
+	 *            the u
+	 * @param m
+	 *            the m
+	 * @return the uri
+	 */
 	public Uri insertSms(Uri u, SmsModel m) {
 		ContentValues values = new ContentValues();
 		values.put(SmsModel.ADDRESS, m.getAddress());
@@ -55,6 +102,13 @@ public class SmsDbHelper {
 		return resolver.insert(u, values);
 	}
 
+	/**
+	 * Gets the thread id for sms uri.
+	 * 
+	 * @param u
+	 *            the u
+	 * @return the thread id for sms uri
+	 */
 	public long getThreadIdForSmsUri(Uri u) {
 		long result = 0;
 		Cursor c = resolver.query(u, new String[] { SmsModel.THREAD_ID }, null,
@@ -67,6 +121,13 @@ public class SmsDbHelper {
 		return result;
 	}
 
+	/**
+	 * Gets the thread id for phone number.
+	 * 
+	 * @param phoneNumber
+	 *            the phone number
+	 * @return the thread id for phone number
+	 */
 	public long getThreadIdForPhoneNumber(String phoneNumber) {
 		long result = -1;
 		Cursor c = resolver.query(SMS_URI, new String[] { SmsModel.THREAD_ID },
@@ -79,6 +140,15 @@ public class SmsDbHelper {
 		return result;
 	}
 
+	/**
+	 * Gets the address for thread id.
+	 * 
+	 * @param phoneNumber
+	 *            the phone number
+	 * @param displayName
+	 *            the display name
+	 * @return the address for thread id
+	 */
 	public String getAddressForThreadId(String phoneNumber, String displayName) {
 		if (displayName == null) {
 			return phoneNumber;
@@ -87,6 +157,15 @@ public class SmsDbHelper {
 		}
 	}
 
+	/**
+	 * Gets the thread display name.
+	 * 
+	 * @param phoneNumber
+	 *            the phone number
+	 * @param displayName
+	 *            the display name
+	 * @return the thread display name
+	 */
 	private String getThreadDisplayName(String phoneNumber, String displayName) {
 		if (!displayName.equals("")) {
 			return displayName;
@@ -95,6 +174,13 @@ public class SmsDbHelper {
 		}
 	}
 
+	/**
+	 * Gets the display name.
+	 * 
+	 * @param phoneNumber
+	 *            the phone number
+	 * @return the display name
+	 */
 	public String getDisplayName(String phoneNumber) {
 		String displayName = phoneNumber;
 		Cursor c;
@@ -111,6 +197,13 @@ public class SmsDbHelper {
 		return displayName;
 	}
 
+	/**
+	 * Gets the phone number.
+	 * 
+	 * @param threadId
+	 *            the thread id
+	 * @return the phone number
+	 */
 	private String getPhoneNumber(long threadId) {
 		String phoneNumber = "";
 		Cursor c = resolver.query(SMS_URI, new String[] { SmsModel.ADDRESS },
@@ -147,6 +240,12 @@ public class SmsDbHelper {
 		return result;
 	}
 
+	/**
+	 * Check for draft.
+	 * 
+	 * @param m
+	 *            the m
+	 */
 	private void checkForDraft(ConversationModel m) {
 		Cursor c1;
 		c1 = resolver.query(SMS_DRAFT_URI, new String[] { SmsModel.BODY },
@@ -161,6 +260,13 @@ public class SmsDbHelper {
 		}
 	}
 
+	/**
+	 * Gets the unread count.
+	 * 
+	 * @param m
+	 *            the m
+	 * @return the unread count
+	 */
 	private void getUnreadCount(ConversationModel m) {
 		Cursor c1;
 		c1 = resolver.query(
@@ -177,6 +283,13 @@ public class SmsDbHelper {
 		}
 	}
 
+	/**
+	 * Gets the sms for thread.
+	 * 
+	 * @param threadId
+	 *            the thread id
+	 * @return the sms for thread
+	 */
 	public List<SmsModel> getSmsForThread(long threadId) {
 		List<SmsModel> result = new ArrayList<SmsModel>();
 		Cursor c = resolver.query(
@@ -199,6 +312,13 @@ public class SmsDbHelper {
 		return result;
 	}
 
+	/**
+	 * Gets the single sms.
+	 * 
+	 * @param u
+	 *            the u
+	 * @return the single sms
+	 */
 	public SmsModel getSingleSms(Uri u) {
 		SmsModel result = null;
 		Cursor c = resolver.query(u, new String[] { SmsModel.ID, SmsModel.BODY,
@@ -216,6 +336,12 @@ public class SmsDbHelper {
 		return result;
 	}
 
+	/**
+	 * Delete thread.
+	 * 
+	 * @param threadId
+	 *            the thread id
+	 */
 	public void deleteThread(long threadId) {
 		resolver.delete(SMS_URI, SmsModel.THREAD_ID + "=?",
 				new String[] { String.valueOf(threadId) });
@@ -223,11 +349,28 @@ public class SmsDbHelper {
 		// new String[] { String.valueOf(threadId) });
 	}
 
+	/**
+	 * Delete sms.
+	 * 
+	 * @param u
+	 *            the u
+	 * @param smsId
+	 *            the sms id
+	 */
 	public void deleteSms(Uri u, long smsId) {
 		resolver.delete(u, SmsModel.ID + "=?",
 				new String[] { String.valueOf(smsId) });
 	}
 
+	/**
+	 * Update sms read.
+	 * 
+	 * @param id
+	 *            the id
+	 * @param messageRead
+	 *            the message read
+	 * @return the int
+	 */
 	public int updateSmsRead(long id, int messageRead) {
 		int result;
 		Uri u = Uri.withAppendedPath(SMS_URI, String.valueOf(id));
@@ -237,6 +380,13 @@ public class SmsDbHelper {
 		return result;
 	}
 
+	/**
+	 * Gets the draft id for thread.
+	 * 
+	 * @param threadId
+	 *            the thread id
+	 * @return the draft id for thread
+	 */
 	public long getDraftIdForThread(long threadId) {
 		long result = -1;
 		Cursor c = resolver.query(
@@ -253,6 +403,13 @@ public class SmsDbHelper {
 		return result;
 	}
 
+	/**
+	 * Gets the draft text for thread.
+	 * 
+	 * @param threadId
+	 *            the thread id
+	 * @return the draft text for thread
+	 */
 	public String getDraftTextForThread(long threadId) {
 		String result = null;
 		Cursor c = resolver.query(
@@ -269,6 +426,17 @@ public class SmsDbHelper {
 		return result;
 	}
 
+	/**
+	 * Update draft message.
+	 * 
+	 * @param msgId
+	 *            the msg id
+	 * @param body
+	 *            the body
+	 * @param date
+	 *            the date
+	 * @return the int
+	 */
 	public int updateDraftMessage(long msgId, String body, long date) {
 		int result = 0;
 		ContentValues cv = new ContentValues();
@@ -280,6 +448,13 @@ public class SmsDbHelper {
 		return result;
 	}
 
+	/**
+	 * Delete draft for thread.
+	 * 
+	 * @param threadId
+	 *            the thread id
+	 * @return the int
+	 */
 	public int deleteDraftForThread(long threadId) {
 		int result;
 		result = resolver.delete(
@@ -287,6 +462,30 @@ public class SmsDbHelper {
 				SmsModel.THREAD_ID + " = ? and " + SmsModel.TYPE + " = ?",
 				new String[] { String.valueOf(threadId),
 						String.valueOf(SmsModel.MESSAGE_TYPE_DRAFT) });
+		return result;
+	}
+
+	public List<SmsModel> getMessagesNotSent() {
+		List<SmsModel> result = new ArrayList<SmsModel>();
+		Cursor c = resolver.query(
+				SMS_URI,
+				new String[] { SmsModel.ID, SmsModel.THREAD_ID,
+						SmsModel.ADDRESS, SmsModel.DATE, SmsModel.BODY,
+						SmsModel.TYPE, SmsModel.READ, SmsModel.STATUS },
+				SmsModel.STATUS + " = ? or " + SmsModel.STATUS + " = ? or "
+						+ SmsModel.STATUS + " = ? ",
+				new String[] { String.valueOf(SmsModel.STATUS_WAITING),
+						String.valueOf(SmsModel.STATUS_PENDING),
+						String.valueOf(SmsModel.STATUS_FAILED) }, null);
+		if (c != null) {
+			while (c.moveToNext()) {
+				SmsModel m = new SmsModel(c.getLong(0), c.getLong(1),
+						c.getString(2), "", c.getLong(3), c.getString(4),
+						c.getInt(5), c.getInt(6), c.getInt(7));
+				result.add(m);
+			}
+			c.close();
+		}
 		return result;
 	}
 }

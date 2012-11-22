@@ -1,3 +1,6 @@
+/*
+ * @author JPorzuczek
+ */
 package pl.qbasso.activities;
 
 import pl.qbasso.custom.SmsThreadPageAdapter;
@@ -10,7 +13,11 @@ import pl.qbasso.sms.SmsDbHelper;
 import pl.qbasso.sms.SmsLengthWatcher;
 import pl.qbasso.smssender.R;
 import android.app.Activity;
+import android.app.NotificationManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.view.ViewPager;
@@ -23,20 +30,61 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class SmsConversationActivity.
+ */
 public class SmsConversationActivity extends FragmentActivity implements
 		ItemSeenListener, SmsDraftAvailableListener {
 
+	/** The Constant EXTRA_CONVERSATION_NUMBER. */
 	private static final String EXTRA_CONVERSATION_NUMBER = "threadNumber";
-	public static final String EXTRA_CONVERSATION_LIST = "threadList";
-	private SmsThreadPageAdapter adapter;
-	private ViewPager viewPager;
-	private ConversationModel[] listInfo;
-	private SmsDbHelper helper;
-	private EditText smsInput;
-	private Button sendButton;
-	private TextView smsLength;
-	protected Context ctx;
 
+	/** The Constant EXTRA_CONVERSATION_LIST. */
+	public static final String EXTRA_CONVERSATION_LIST = "threadList";
+
+	/** The adapter. */
+	private SmsThreadPageAdapter adapter;
+
+	/** The view pager. */
+	private ViewPager viewPager;
+
+	/** The list info. */
+	private ConversationModel[] listInfo;
+
+	/** The helper. */
+	private SmsDbHelper helper;
+
+	/** The sms input. */
+	private EditText smsInput;
+
+	/** The send button. */
+	private Button sendButton;
+
+	/** The sms length. */
+	private TextView smsLength;
+
+	/** The ctx. */
+	protected Context ctx;
+	
+	private NotificationManager nm;
+
+	private BroadcastReceiver receiver = new BroadcastReceiver() {
+
+		@Override
+		public void onReceive(Context arg0, Intent intent) {
+			int fragmentId = findAdapterByThreadId(intent.getLongExtra(
+					"thread_id", -1));
+			if (fragmentId == viewPager.getCurrentItem()) {
+				((SmsConversation) adapter.getItem(fragmentId))
+						.updateItems(true);
+				nm.cancelAll();
+			}
+
+		}
+	};
+
+	/** The send listener. */
 	private OnClickListener sendListener = new OnClickListener() {
 		public void onClick(View v) {
 			final String messageBody = smsInput.getText().toString();
@@ -54,6 +102,8 @@ public class SmsConversationActivity extends FragmentActivity implements
 			}
 		}
 	};
+
+	/** The page changed listener. */
 	private OnPageChangeListener pageChangedListener = new OnPageChangeListener() {
 
 		public void onPageSelected(int arg0) {
@@ -74,11 +124,17 @@ public class SmsConversationActivity extends FragmentActivity implements
 		}
 	};
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.support.v4.app.FragmentActivity#onCreate(android.os.Bundle)
+	 */
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		int pageNo = 0;
 		super.onCreate(savedInstanceState);
 		ctx = this;
+		nm = (NotificationManager) getSystemService(Activity.NOTIFICATION_SERVICE);
 		helper = new SmsDbHelper(getContentResolver());
 		setContentView(R.layout.thread_pager);
 		Object[] l = (Object[]) getIntent().getSerializableExtra(
@@ -88,7 +144,7 @@ public class SmsConversationActivity extends FragmentActivity implements
 		int i = 0;
 		for (Object object : l) {
 			listInfo[i++] = (ConversationModel) object;
-		}
+		}		
 		smsLength = (TextView) findViewById(R.id.sms_thread_sms_length);
 		smsLength.setText(getString(R.string.sms_length, 0,
 				SmsModel.ASCII_SMS_LENGTH, 0));
@@ -99,11 +155,19 @@ public class SmsConversationActivity extends FragmentActivity implements
 		viewPager = (ViewPager) findViewById(R.id.content_pages);
 		adapter = new SmsThreadPageAdapter(this, listInfo, this, this,
 				getIntent().getBooleanExtra("send_now", false));
+//		viewPager.setOffscreenPageLimit(listInfo.length-1);
 		viewPager.setAdapter(adapter);
 		viewPager.setCurrentItem(pageNo);
 		viewPager.setOnPageChangeListener(pageChangedListener);
 	}
 
+	/**
+	 * Find adapter by thread id.
+	 * 
+	 * @param threadId
+	 *            the thread id
+	 * @return the int
+	 */
 	protected int findAdapterByThreadId(long threadId) {
 		for (int i = 0; i < listInfo.length; i++) {
 			if (listInfo[i].getThreadId() == threadId) {
@@ -113,6 +177,11 @@ public class SmsConversationActivity extends FragmentActivity implements
 		return -1;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.support.v4.app.FragmentActivity#onPause()
+	 */
 	@Override
 	public void onPause() {
 		ConversationModel cm = listInfo[viewPager.getCurrentItem()];
@@ -137,9 +206,15 @@ public class SmsConversationActivity extends FragmentActivity implements
 				ConversationList.NEED_REFRESH = true;
 			}
 		}
+		unregisterReceiver(receiver);
 		super.onPause();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see pl.qbasso.interfaces.ItemSeenListener#onItemSeen(int, long)
+	 */
 	public void onItemSeen(int adapterId, long messageId) {
 		if (viewPager.getCurrentItem() == adapterId) {
 			helper.updateSmsRead(messageId, SmsModel.MESSAGE_READ);
@@ -147,22 +222,46 @@ public class SmsConversationActivity extends FragmentActivity implements
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.support.v4.app.FragmentActivity#onBackPressed()
+	 */
 	@Override
 	public void onBackPressed() {
 
 		super.onBackPressed();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * pl.qbasso.interfaces.SmsDraftAvailableListener#draftTextAvailable(java
+	 * .lang.String, int)
+	 */
 	public void draftTextAvailable(String text, int position) {
 		if (position == viewPager.getCurrentItem()) {
 			smsInput.setText(text);
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.support.v4.app.FragmentActivity#onDestroy()
+	 */
 	@Override
 	protected void onDestroy() {
 
 		super.onDestroy();
+	}
+
+	@Override
+	protected void onResume() {
+		super.onResume();
+		registerReceiver(receiver, new IntentFilter(
+				"pl.qbasso.smssender.new_message_arrived"));
 	}
 
 }

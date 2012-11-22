@@ -1,3 +1,6 @@
+/*
+ * @author JPorzuczek
+ */
 package pl.qbasso.sms;
 
 import java.util.ArrayList;
@@ -17,10 +20,18 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class SmsReceiver.
+ */
 public class SmsReceiver extends BroadcastReceiver {
 
+	/** The nm. */
 	private static NotificationManager nm;
 
+	/* (non-Javadoc)
+	 * @see android.content.BroadcastReceiver#onReceive(android.content.Context, android.content.Intent)
+	 */
 	@Override
 	public void onReceive(Context ctx, Intent i) {
 		SmsMessage msg = null;
@@ -53,6 +64,9 @@ public class SmsReceiver extends BroadcastReceiver {
 					Notification n = prepareNotification(ctx, msg, threadId,
 							sender);
 					nm.notify(sender, 0, n);
+					Intent intent = new Intent("pl.qbasso.smssender.new_message_arrived");
+					intent.putExtra("thread_id", threadId);
+					ctx.sendBroadcast(intent);
 				}
 			}
 			this.abortBroadcast();
@@ -60,6 +74,15 @@ public class SmsReceiver extends BroadcastReceiver {
 
 	}
 
+	/**
+	 * Prepare notification.
+	 *
+	 * @param ctx the ctx
+	 * @param msg the msg
+	 * @param threadId the thread id
+	 * @param sender the sender
+	 * @return the notification
+	 */
 	private Notification prepareNotification(Context ctx, SmsMessage msg,
 			long threadId, String sender) {
 		Notification n = new Notification();
@@ -74,6 +97,13 @@ public class SmsReceiver extends BroadcastReceiver {
 		PendingIntent pi = PendingIntent.getActivity(ctx, 0, pendingIntent,
 				PendingIntent.FLAG_UPDATE_CURRENT);
 		n.icon = R.drawable.ic_launcher;
+		n.defaults |= Notification.DEFAULT_VIBRATE | Notification.DEFAULT_SOUND;
+		n.ledARGB = 0xff0000ff;
+		n.ledOffMS = 1500;
+		n.ledOnMS = 200;
+		n.tickerText = msg.getMessageBody().length() > 50 ? msg
+				.getMessageBody().substring(0, 50) + "..." : msg
+				.getMessageBody();
 		n.flags |= Notification.FLAG_AUTO_CANCEL;
 		n.setLatestEventInfo(ctx, sender,
 				msg.getMessageBody().length() > 50 ? msg.getMessageBody()
