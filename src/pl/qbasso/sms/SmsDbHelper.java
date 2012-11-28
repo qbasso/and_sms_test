@@ -4,8 +4,11 @@
 package pl.qbasso.sms;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 
+import pl.qbasso.custom.SmsThreadPageAdapter;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import android.content.ContentResolver;
@@ -218,11 +221,19 @@ public class SmsDbHelper {
 		return phoneNumber;
 	}
 
-	public List<ConversationModel> getThreads() {
+	public List<ConversationModel> getThreads(HashSet<Long> needRefresh) {
 		Cursor c1 = null;
+		Cursor c = null;
 		List<ConversationModel> result = new ArrayList<ConversationModel>();
-		Cursor c = resolver.query(SMS_CONVERSATIONS_URI, null, null, null,
-				SMS_SORT_ORDER);
+		if (needRefresh == null) {
+			c = resolver.query(SMS_CONVERSATIONS_URI, null, null, null,
+					SMS_SORT_ORDER);
+		} else {
+			c = resolver.query(SMS_CONVERSATIONS_URI, null,
+					ConversationModel.THREAD_ID + " in "
+							+ buildListofNamedParameters(needRefresh.size()),
+					buildListOfParameters(needRefresh), SMS_SORT_ORDER);
+		}
 		if (c != null) {
 			while (c.moveToNext()) {
 				ConversationModel m = new ConversationModel(c.getLong(0),
@@ -238,6 +249,25 @@ public class SmsDbHelper {
 			c.close();
 		}
 		return result;
+	}
+
+	private String[] buildListOfParameters(HashSet<Long> needRefresh) {
+		Iterator<Long> it = needRefresh.iterator();
+		String[] result = new String[needRefresh.size()];
+		for (int i = 0; i < needRefresh.size(); i++) {
+			result[i] = String.valueOf(it.next());
+		}
+		return result;
+	}
+
+	private String buildListofNamedParameters(int size) {
+		StringBuilder result = new StringBuilder("(");
+		for (int i = 0; i < size; i++) {
+			result.append("?, ");
+		}
+		result.delete(result.length() - 2, result.length());
+		result.append(")");
+		return result.toString();
 	}
 
 	/**
@@ -300,7 +330,7 @@ public class SmsDbHelper {
 				SmsModel.THREAD_ID + "=? and " + SmsModel.TYPE + " <> ?",
 				new String[] { String.valueOf(threadId),
 						String.valueOf(SmsModel.MESSAGE_TYPE_DRAFT) },
-				SMS_SORT_ORDER);
+				"date ASC");
 		if (c != null) {
 			while (c.moveToNext()) {
 				result.add(new SmsModel(c.getLong(0), threadId, c.getString(2),
@@ -488,4 +518,5 @@ public class SmsDbHelper {
 		}
 		return result;
 	}
+
 }

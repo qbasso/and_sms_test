@@ -3,7 +3,7 @@
     android:versionCode="1"
     android:versionName="1.0" >
 
-    <uses-sdk
+    <uses-sdk        
         android:minSdkVersion="9"
         android:targetSdkVersion="15" />
 
@@ -13,7 +13,7 @@
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.WRITE_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
-    <uses-permission android:name="android.permission.VIBRATE"/>
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:icon="@drawable/ic_launcher"
@@ -26,13 +26,12 @@
             android:windowSoftInputMode="adjustPan" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         <activity
             android:name="pl.qbasso.activities.SmsConversationActivity"
-            android:configChanges="orientation|keyboardHidden"
+            android:configChanges="orientation|keyboardHidden|screenLayout"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan" >
         </activity>
 

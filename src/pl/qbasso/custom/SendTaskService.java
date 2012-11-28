@@ -22,6 +22,7 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
+import android.util.Patterns;
 import android.widget.ListView;
 
 // TODO: Auto-generated Javadoc
@@ -154,7 +155,7 @@ public class SendTaskService extends Service {
 			smsModel.setSmsType(SmsModel.MESSAGE_TYPE_SENT);
 			toSend = Message.obtain(null, COMPLETE_MESSAGE);
 			toSend.setData(data);
-			if (!clientId.equals("")) {
+			if (!clientId.equals("") && mClients.get(clientId) != null) {
 				mClients.get(clientId).send(toSend);
 			}
 			mMessageQueue.remove(smsModel.getId());
@@ -273,7 +274,11 @@ public class SendTaskService extends Service {
 		mSendHelper = new SmsSendHelper();
 		List<SmsModel> l = mDbHelper.getMessagesNotSent();
 		for (SmsModel smsModel : l) {
-			addToQueue(smsModel, 0, "");
+			if (Patterns.PHONE.matcher(smsModel.getAddress()).find()) {
+				addToQueue(smsModel, 0, "");
+			} else {
+				mDbHelper.deleteSms(SmsDbHelper.SMS_URI, smsModel.getId());
+			}
 		}
 	}
 

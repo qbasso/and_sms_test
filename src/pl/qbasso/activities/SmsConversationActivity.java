@@ -9,6 +9,7 @@ import pl.qbasso.interfaces.ItemSeenListener;
 import pl.qbasso.interfaces.SmsDraftAvailableListener;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
+import pl.qbasso.sms.Cache;
 import pl.qbasso.sms.SmsDbHelper;
 import pl.qbasso.sms.SmsLengthWatcher;
 import pl.qbasso.smssender.R;
@@ -199,11 +200,13 @@ public class SmsConversationActivity extends FragmentActivity implements
 			}
 			Toast.makeText(ctx, "Dodano do wersji roboczych",
 					Toast.LENGTH_SHORT).show();
-			ConversationList.NEED_REFRESH = true;
+			Cache.delete(cm);
+			Cache.addToRefreshSet(cm.getThreadId());
 		} else {
 			if (msgId > -1) {
 				helper.deleteSms(SmsDbHelper.SMS_URI, msgId);
-				ConversationList.NEED_REFRESH = true;
+				Cache.delete(cm);
+				Cache.addToRefreshSet(cm.getThreadId());
 			}
 		}
 		unregisterReceiver(receiver);
@@ -218,7 +221,7 @@ public class SmsConversationActivity extends FragmentActivity implements
 	public void onItemSeen(int adapterId, long messageId) {
 		if (viewPager.getCurrentItem() == adapterId) {
 			helper.updateSmsRead(messageId, SmsModel.MESSAGE_READ);
-			ConversationList.NEED_REFRESH = true;
+			Cache.addToRefreshSet(listInfo[viewPager.getCurrentItem()].getThreadId());
 		}
 	}
 

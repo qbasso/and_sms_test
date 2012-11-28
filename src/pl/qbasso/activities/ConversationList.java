@@ -11,6 +11,7 @@ import pl.qbasso.custom.SlideHelper;
 import pl.qbasso.interfaces.SlidingViewLoadedListener;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
+import pl.qbasso.sms.Cache;
 import pl.qbasso.sms.SmsDbHelper;
 import pl.qbasso.sms.SmsLengthWatcher;
 import pl.qbasso.sms.SmsSendHelper;
@@ -25,6 +26,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
@@ -34,10 +36,6 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Intents.Insert;
-import android.util.DisplayMetrics;
-import android.view.GestureDetector;
-import android.view.GestureDetector.OnGestureListener;
-import android.view.GestureDetector.SimpleOnGestureListener;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
@@ -113,13 +111,6 @@ public class ConversationList extends Activity {
 	/** The conversation adapter. */
 	private ConversationAdapter conversationAdapter;
 
-	private int screenWidthPx;
-
-	private static final int GESTURE_THRESHOLD = 5;
-	private static final int MODE_DRAG = 0;
-	private static final int MODE_OTHER = 1;
-
-	private int touchMode;
 	float previousX;
 	float startX;
 	float diff;
@@ -162,6 +153,7 @@ public class ConversationList extends Activity {
 		Intent insert = new Intent(Intent.ACTION_INSERT_OR_EDIT);
 		insert.setType(Contacts.CONTENT_ITEM_TYPE);
 		insert.putExtra(Insert.PHONE, item.getAddress());
+		Cache.addToRefreshSet(item.getThreadId());
 		startActivityForResult(insert, 0);
 	}
 
@@ -254,7 +246,7 @@ public class ConversationList extends Activity {
 				@Override
 				public void onReceive(Context context, Intent intent) {
 					if (intent.getAction().equals(SmsSendHelper.ACTION_UPDATE)) {
-						updateItems();
+						// updateItems();
 						if (slideHelper.isMenuShown()) {
 							slideHelper.hideMenu(false);
 							contactInput.getText().clear();
@@ -307,10 +299,9 @@ public class ConversationList extends Activity {
 	protected void onResume() {
 		super.onResume();
 		initReceivers();
-		if (NEED_REFRESH) {
+		if (Cache.needRefresh()) {
 			showProgressDialog();
-			updateItems();
-			NEED_REFRESH = false;
+			updateItems(true);
 		}
 	}
 
@@ -348,12 +339,22 @@ public class ConversationList extends Activity {
 
 	/**
 	 * Update items.
+	 * 
+	 * @param b
 	 */
-	private void updateItems() {
+	private void updateItems(final boolean b) {
 		showProgressDialog();
 		new Thread(new Runnable() {
 			public void run() {
-				items = smsAccessor.getThreads();
+				if (!b) {
+					Cache.getInstance();
+					Cache.putAll(smsAccessor.getThreads(null));
+					items = Cache.getAll();
+				} else {
+					Cache.putAllAtBeginnig(smsAccessor.getThreads(Cache.getRefreshList()));
+					Cache.clearRefreshSet();
+					items = Cache.getAll();
+				}
 				mainHandler.sendEmptyMessage(0);
 			}
 		}).start();
@@ -381,12 +382,9 @@ public class ConversationList extends Activity {
 		smsAccessor = new SmsDbHelper(getContentResolver());
 		composeButton = (Button) findViewById(R.id.button_compose_new);
 		composeButton.setOnClickListener(composeButtonListener);
-		DisplayMetrics metrics = new DisplayMetrics();
-		getWindow().getWindowManager().getDefaultDisplay().getMetrics(metrics);
-		screenWidthPx = metrics.widthPixels;
 		pd = new ProgressDialog(ctx);
 		showProgressDialog();
-		updateItems();
+		updateItems(false);
 	}
 
 	/**
@@ -530,7 +528,7 @@ public class ConversationList extends Activity {
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (requestCode == 0 && resultCode == Activity.RESULT_OK) {
-			updateItems();
+			updateItems(true);
 		}
 	}
 
@@ -543,4 +541,5 @@ public class ConversationList extends Activity {
 			return super.dispatchTouchEvent(ev);
 		}
 	}
+
 }
