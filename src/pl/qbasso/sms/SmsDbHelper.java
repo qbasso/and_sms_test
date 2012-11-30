@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
-import pl.qbasso.custom.SmsThreadPageAdapter;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import android.content.ContentResolver;
@@ -27,6 +26,7 @@ public class SmsDbHelper {
 	public static final Uri SMS_URI = Uri.parse("content://sms");
 
 	/** The Constant SMS_OUTBOX_URI. */
+
 	public static final Uri SMS_OUTBOX_URI = Uri.parse("content://sms/sent");
 
 	/** The Constant SMS_INBOX_URI. */
@@ -69,12 +69,8 @@ public class SmsDbHelper {
 	public int updateSmsStatus(Uri u, int smsStatus, int smsType) {
 		int result;
 		ContentValues values = new ContentValues();
-		if (smsStatus != -1) {
-			values.put(SmsModel.STATUS, smsStatus);
-		}
-		if (smsType != -1) {
-			values.put(SmsModel.TYPE, smsType);
-		}
+		values.put(SmsModel.STATUS, smsStatus);
+		values.put(SmsModel.TYPE, smsType);
 		result = resolver.update(u, values, null, null);
 		return result;
 	}
@@ -228,7 +224,7 @@ public class SmsDbHelper {
 		if (needRefresh == null) {
 			c = resolver.query(SMS_CONVERSATIONS_URI, null, null, null,
 					SMS_SORT_ORDER);
-		} else {
+		} else if (needRefresh.size() > 0) {
 			c = resolver.query(SMS_CONVERSATIONS_URI, null,
 					ConversationModel.THREAD_ID + " in "
 							+ buildListofNamedParameters(needRefresh.size()),
@@ -239,6 +235,7 @@ public class SmsDbHelper {
 				ConversationModel m = new ConversationModel(c.getLong(0),
 						c.getInt(1), c.getString(2));
 				String phoneNumber = getPhoneNumber(m.getThreadId());
+				getLastModified(m);
 				getUnreadCount(m);
 				checkForDraft(m);
 				String displayName = getDisplayName(phoneNumber);
@@ -251,6 +248,19 @@ public class SmsDbHelper {
 		return result;
 	}
 
+	private void getLastModified(ConversationModel m) {
+		Cursor c = resolver.query(SMS_URI, new String[] { SmsModel.DATE },
+				SmsModel.THREAD_ID + "= ?",
+				new String[] { String.valueOf(m.getThreadId()) },
+				"date DESC limit 1");
+		if (c != null) {
+			if (c.moveToNext()) {
+				m.setLastModified(c.getLong(0));
+			}
+			c.close();
+		}
+	}
+
 	private String[] buildListOfParameters(HashSet<Long> needRefresh) {
 		Iterator<Long> it = needRefresh.iterator();
 		String[] result = new String[needRefresh.size()];
@@ -261,13 +271,16 @@ public class SmsDbHelper {
 	}
 
 	private String buildListofNamedParameters(int size) {
-		StringBuilder result = new StringBuilder("(");
-		for (int i = 0; i < size; i++) {
-			result.append("?, ");
+		if (size > 0) {
+			StringBuilder result = new StringBuilder("(");
+			for (int i = 0; i < size; i++) {
+				result.append("?, ");
+			}
+			result.delete(result.length() - 2, result.length());
+			result.append(")");
+			return result.toString();
 		}
-		result.delete(result.length() - 2, result.length());
-		result.append(")");
-		return result.toString();
+		return "";
 	}
 
 	/**
@@ -332,6 +345,7 @@ public class SmsDbHelper {
 						String.valueOf(SmsModel.MESSAGE_TYPE_DRAFT) },
 				"date ASC");
 		if (c != null) {
+			String[] columns = c.getColumnNames();
 			while (c.moveToNext()) {
 				result.add(new SmsModel(c.getLong(0), threadId, c.getString(2),
 						"", c.getLong(3), c.getString(1), c.getInt(4), c
@@ -406,6 +420,7 @@ public class SmsDbHelper {
 		Uri u = Uri.withAppendedPath(SMS_URI, String.valueOf(id));
 		ContentValues v = new ContentValues();
 		v.put(SmsModel.READ, messageRead);
+
 		result = resolver.update(u, v, null, null);
 		return result;
 	}
@@ -472,6 +487,7 @@ public class SmsDbHelper {
 		ContentValues cv = new ContentValues();
 		cv.put(SmsModel.BODY, body);
 		cv.put(SmsModel.DATE, date);
+		cv.put(SmsModel.DATE, System.currentTimeMillis());
 		result = resolver.update(
 				Uri.withAppendedPath(SMS_DRAFT_URI, String.valueOf(msgId)), cv,
 				null, null);
@@ -497,16 +513,12 @@ public class SmsDbHelper {
 
 	public List<SmsModel> getMessagesNotSent() {
 		List<SmsModel> result = new ArrayList<SmsModel>();
-		Cursor c = resolver.query(
-				SMS_URI,
-				new String[] { SmsModel.ID, SmsModel.THREAD_ID,
-						SmsModel.ADDRESS, SmsModel.DATE, SmsModel.BODY,
-						SmsModel.TYPE, SmsModel.READ, SmsModel.STATUS },
-				SmsModel.STATUS + " = ? or " + SmsModel.STATUS + " = ? or "
-						+ SmsModel.STATUS + " = ? ",
-				new String[] { String.valueOf(SmsModel.STATUS_WAITING),
-						String.valueOf(SmsModel.STATUS_PENDING),
-						String.valueOf(SmsModel.STATUS_FAILED) }, null);
+		Cursor c = resolver.query(SMS_URI, new String[] { SmsModel.ID,
+				SmsModel.THREAD_ID, SmsModel.ADDRESS, SmsModel.DATE,
+				SmsModel.BODY, SmsModel.TYPE, SmsModel.READ, SmsModel.STATUS },
+				SmsModel.TYPE + " = ? or " + SmsModel.TYPE + " = ? ",
+				new String[] { String.valueOf(SmsModel.MESSAGE_TYPE_QUEUED),
+						String.valueOf(SmsModel.MESSAGE_TYPE_FAILED) }, null);
 		if (c != null) {
 			while (c.moveToNext()) {
 				SmsModel m = new SmsModel(c.getLong(0), c.getLong(1),
@@ -519,4 +531,18 @@ public class SmsDbHelper {
 		return result;
 	}
 
+	public int getUnreadCount() {
+		int result = 0;
+		Cursor c = resolver.query(SMS_URI,
+				new String[] { String.format("count(%s)", SmsModel.ID) },
+				String.format("%s = ?", SmsModel.READ),
+				new String[] { String.valueOf(SmsModel.MESSAGE_NOT_READ) },
+				null);
+		if (c != null) {
+			if (c.moveToNext()) {
+				result = c.getInt(0);
+			}
+		}
+		return result;
+	}
 }

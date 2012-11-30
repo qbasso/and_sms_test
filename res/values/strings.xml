@@ -4,7 +4,7 @@
     <string name="hello_world">Hello world!</string>
     <string name="menu_settings">Settings</string>
     <string name="title_activity_main">MainActivity</string>
-    <string name="message_body">&lt;b>%1$s:&lt;/b> %2$s</string>    
+    <string name="message_body">&lt;b>%1$s:&lt;/b> %2$s</string>
     <string name="action_delete_message">Usuń</string>
     <string name="action_delete_thread">Usuń wątek</string>
     <string name="action_forward">Prześlij</string>
@@ -13,11 +13,18 @@
     <string name="send_sms_to">Do</string>
     <string name="send_sms_content_hint">Treść</string>
     <string name="send_sms_send_label">Wyślij</string>
+    <string name="crash_occured">Raport błędu zostanie wysłany</string>
+
     <string-array name="conversation_actions">
-        <item >Usuń wątek</item>
-        <item >Dodaj kontakt</item>
+        <item>Usuń wątek</item>
+        <item>Dodaj kontakt</item>
     </string-array>
+    <string-array name="message_actions">
+        <item>Prześlij</item>
+    </string-array>
+
     <color name="red">#AAFF0000</color>
     <color name="blue">#BB0C67E8</color>
+    <color name="light_blue">#cc1BC9E0</color>
 
 </resources>

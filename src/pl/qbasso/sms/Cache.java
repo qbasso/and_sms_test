@@ -75,12 +75,11 @@ public class Cache {
 		return sConversations;
 	}
 
-	public static synchronized void delete(ConversationModel m) {
-		int pos = sPositions.get(m.getThreadId()) != null ? sPositions.get(m
-				.getThreadId()) : -1;
+	public static synchronized void delete(long threadId) {
+		int pos = sPositions.get(threadId) != null ? sPositions.get(threadId) : -1;
 		if (pos != -1) {
 			sConversations.remove(pos);
-			sPositions.remove(m.getThreadId());
+			sPositions.remove(threadId);
 		}
 	}
 

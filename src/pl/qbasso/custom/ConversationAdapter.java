@@ -24,16 +24,16 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 
 	/** The resource id. */
 	private int resourceId;
-	
+
 	/** The items. */
 	private List<ConversationModel> items;
-	
+
 	/** The inflater. */
 	private LayoutInflater inflater;
-	
+
 	/** The holder. */
 	private ItemViewHolder holder;
-	
+
 	/** The ctx. */
 	private Context ctx;
 
@@ -41,19 +41,21 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 	 * The Class ItemViewHolder.
 	 */
 	private static class ItemViewHolder {
-		
+
 		/** The contact name. */
 		TextView contactName;
-		
+
 		/** The message snippet. */
 		TextView messageSnippet;
-		
+
 		/** The background. */
 		LinearLayout background;
-		
+
 		/** The unread count. */
 		TextView unreadCount;
-		
+
+		TextView date;
+
 		/** The unread icon. */
 		RelativeLayout unreadIcon;
 	}
@@ -63,7 +65,9 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 		return items.size();
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.widget.ArrayAdapter#getItem(int)
 	 */
 	@Override
@@ -71,8 +75,11 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 		return items.get(position);
 	}
 
-	/* (non-Javadoc)
-	 * @see android.widget.ArrayAdapter#getView(int, android.view.View, android.view.ViewGroup)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.widget.ArrayAdapter#getView(int, android.view.View,
+	 * android.view.ViewGroup)
 	 */
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
@@ -89,7 +96,9 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 		if (item != null) {
 			holder.contactName.setText(ctx.getString(R.string.contact_name,
 					item.getDisplayName(), item.getCount()));
-			holder.messageSnippet.setText(item.isDraft() ? "Robocza: " + item.getSnippet() : item.getSnippet());
+			holder.date.setText(Utils.formatDate(item.getLastModified()));
+			holder.messageSnippet.setText(item.isDraft() ? "Robocza: "
+					+ item.getSnippet() : item.getSnippet());
 			if (item.getUnread() > 0) {
 				holder.unreadCount.setText(String.valueOf(item.getUnread()));
 				holder.unreadIcon.setVisibility(View.VISIBLE);
@@ -112,8 +121,9 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 
 	/**
 	 * Initialize holder.
-	 *
-	 * @param view the view
+	 * 
+	 * @param view
+	 *            the view
 	 */
 	private void initializeHolder(View view) {
 		holder = new ItemViewHolder();
@@ -127,14 +137,18 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 				.findViewById(R.id.thread_item_unread_count);
 		holder.unreadIcon = (RelativeLayout) view
 				.findViewById(R.id.thread_item_unread_icon);
+		holder.date = (TextView) view.findViewById(R.id.thread_item_date);
 	}
 
 	/**
 	 * Instantiates a new conversation adapter.
-	 *
-	 * @param context the context
-	 * @param textViewResourceId the text view resource id
-	 * @param objects the objects
+	 * 
+	 * @param context
+	 *            the context
+	 * @param textViewResourceId
+	 *            the text view resource id
+	 * @param objects
+	 *            the objects
 	 */
 	public ConversationAdapter(Context context, int textViewResourceId,
 			List<ConversationModel> objects) {

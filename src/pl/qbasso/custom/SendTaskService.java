@@ -5,6 +5,7 @@ package pl.qbasso.custom;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.regex.Matcher;
 
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.SmsDbHelper;
@@ -12,7 +13,6 @@ import pl.qbasso.sms.SmsSendHelper;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
-import android.location.Address;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -23,7 +23,6 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.util.Log;
 import android.util.Patterns;
-import android.widget.ListView;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -150,9 +149,9 @@ public class SendTaskService extends Service {
 			mDbHelper.updateSmsStatus(
 					Uri.withAppendedPath(SmsDbHelper.SMS_URI,
 							String.valueOf(smsModel.getId())),
-					SmsModel.STATUS_PENDING, SmsModel.MESSAGE_TYPE_SENT);
-			smsModel.setStatus(SmsModel.STATUS_PENDING);
-			smsModel.setSmsType(SmsModel.MESSAGE_TYPE_SENT);
+					SmsModel.STATUS_NONE, SmsModel.MESSAGE_TYPE_QUEUED);
+			smsModel.setStatus(SmsModel.STATUS_NONE);
+			smsModel.setSmsType(SmsModel.MESSAGE_TYPE_QUEUED);
 			toSend = Message.obtain(null, COMPLETE_MESSAGE);
 			toSend.setData(data);
 			if (!clientId.equals("") && mClients.get(clientId) != null) {
@@ -274,7 +273,9 @@ public class SendTaskService extends Service {
 		mSendHelper = new SmsSendHelper();
 		List<SmsModel> l = mDbHelper.getMessagesNotSent();
 		for (SmsModel smsModel : l) {
-			if (Patterns.PHONE.matcher(smsModel.getAddress()).find()) {
+			Matcher m = Patterns.PHONE.matcher(smsModel.getAddress());
+			if (m.find() && m.end()-m.start() == smsModel.getAddress().length()) {
+				smsModel.setDate(System.currentTimeMillis());
 				addToQueue(smsModel, 0, "");
 			} else {
 				mDbHelper.deleteSms(SmsDbHelper.SMS_URI, smsModel.getId());

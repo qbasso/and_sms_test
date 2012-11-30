@@ -32,6 +32,8 @@ public class ConversationModel implements Serializable {
 	/** The snippet. */
 	private String snippet;
 	
+	private long lastModified;
+	
 	/** The count. */
 	private int count;
 	
@@ -114,5 +116,13 @@ public class ConversationModel implements Serializable {
 
 	public void setDraft(boolean draft) {
 		this.draft = draft;
+	}
+
+	public long getLastModified() {
+		return lastModified;
+	}
+
+	public void setLastModified(long lastModified) {
+		this.lastModified = lastModified;
 	}
 }

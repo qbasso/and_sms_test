@@ -12,9 +12,12 @@ import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.Cache;
 import pl.qbasso.sms.SmsDbHelper;
 import pl.qbasso.sms.SmsLengthWatcher;
+import pl.qbasso.sms.SmsReceiver;
 import pl.qbasso.smssender.R;
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -111,17 +114,15 @@ public class SmsConversationActivity extends FragmentActivity implements
 			ConversationModel cm = listInfo[arg0];
 			if (cm.isDraft()) {
 				smsInput.setText(cm.getSnippet());
+			} else {
+				smsInput.setText("");
 			}
 		}
 
-		public void onPageScrolled(int arg0, float arg1, int arg2) {
-			// TODO Auto-generated method stub
-
+		public void onPageScrollStateChanged(int arg0) {
 		}
 
-		public void onPageScrollStateChanged(int arg0) {
-			// TODO Auto-generated method stub
-
+		public void onPageScrolled(int arg0, float arg1, int arg2) {
 		}
 	};
 
@@ -138,6 +139,11 @@ public class SmsConversationActivity extends FragmentActivity implements
 		nm = (NotificationManager) getSystemService(Activity.NOTIFICATION_SERVICE);
 		helper = new SmsDbHelper(getContentResolver());
 		setContentView(R.layout.thread_pager);
+		if (getIntent().getBooleanExtra(SmsReceiver.EXTRA_CANCEL_ALARM, false)) {
+			AlarmManager am = (AlarmManager) ctx.getSystemService(Activity.ALARM_SERVICE);
+			Intent intent = new Intent(SmsReceiver.ACTION_CANCEL_LIGHT);
+			am.cancel(PendingIntent.getBroadcast(ctx, 0, intent, 0));
+		}
 		Object[] l = (Object[]) getIntent().getSerializableExtra(
 				EXTRA_CONVERSATION_LIST);
 		pageNo = getIntent().getIntExtra(EXTRA_CONVERSATION_NUMBER, 0);
@@ -156,7 +162,6 @@ public class SmsConversationActivity extends FragmentActivity implements
 		viewPager = (ViewPager) findViewById(R.id.content_pages);
 		adapter = new SmsThreadPageAdapter(this, listInfo, this, this,
 				getIntent().getBooleanExtra("send_now", false));
-//		viewPager.setOffscreenPageLimit(listInfo.length-1);
 		viewPager.setAdapter(adapter);
 		viewPager.setCurrentItem(pageNo);
 		viewPager.setOnPageChangeListener(pageChangedListener);
@@ -200,12 +205,12 @@ public class SmsConversationActivity extends FragmentActivity implements
 			}
 			Toast.makeText(ctx, "Dodano do wersji roboczych",
 					Toast.LENGTH_SHORT).show();
-			Cache.delete(cm);
+			Cache.delete(cm.getThreadId());
 			Cache.addToRefreshSet(cm.getThreadId());
 		} else {
 			if (msgId > -1) {
 				helper.deleteSms(SmsDbHelper.SMS_URI, msgId);
-				Cache.delete(cm);
+				Cache.delete(cm.getThreadId());
 				Cache.addToRefreshSet(cm.getThreadId());
 			}
 		}
@@ -221,6 +226,7 @@ public class SmsConversationActivity extends FragmentActivity implements
 	public void onItemSeen(int adapterId, long messageId) {
 		if (viewPager.getCurrentItem() == adapterId) {
 			helper.updateSmsRead(messageId, SmsModel.MESSAGE_READ);
+			Cache.delete(listInfo[viewPager.getCurrentItem()].getThreadId());
 			Cache.addToRefreshSet(listInfo[viewPager.getCurrentItem()].getThreadId());
 		}
 	}
@@ -232,7 +238,6 @@ public class SmsConversationActivity extends FragmentActivity implements
 	 */
 	@Override
 	public void onBackPressed() {
-
 		super.onBackPressed();
 	}
 

@@ -3,7 +3,7 @@ package pl.qbasso.fragments;
 import java.util.List;
 import java.util.UUID;
 
-import pl.qbasso.activities.ConversationList;
+import pl.qbasso.activities.SendSms;
 import pl.qbasso.custom.SendTaskService;
 import pl.qbasso.custom.SmsAdapter;
 import pl.qbasso.interfaces.ActionClickListener;
@@ -19,8 +19,10 @@ import pl.qbasso.sms.SmsSendHelper;
 import pl.qbasso.smssender.R;
 import pl.qbasso.view.CustomPopup;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.net.Uri;
@@ -34,10 +36,10 @@ import android.support.v4.app.Fragment;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.LinearLayout;
 import android.widget.ListView;
 
@@ -61,14 +63,41 @@ public class SmsConversation extends Fragment {
 	private static final int ACTION_DELETE_THREAD = 1;
 	private static final int ACTION_FORWARD = 2;
 	private static final String TAG = "SmsConversation";
+	private static final String EXTRA_MESSAGE_BODY = "message_body";
 	private SmsSendHelper helper;
 	private SmsModel sendingNow;
 	private String clientId;
 	protected ItemSeenListener itemSeenListener;
-	private OnLongClickListener itemLongClickListener;
 	private SmsDraftAvailableListener draftAvailableListener;
 	private Messenger messenger;
 	private Messenger mService;
+
+	private OnItemLongClickListener itemLongClickListener = new OnItemLongClickListener() {
+
+		public boolean onItemLongClick(AdapterView<?> arg0, View arg1,
+				int arg2, long arg3) {
+			final SmsModel item = items.get(arg2);
+			AlertDialog.Builder b = new AlertDialog.Builder(act);
+			b.setTitle("Opcje wiadomoœci").setItems(R.array.message_actions,
+					new DialogInterface.OnClickListener() {
+
+						public void onClick(DialogInterface dialog, int which) {
+							switch (which) {
+							case 0:
+								Intent i = new Intent(act, SendSms.class);
+								i.putExtra(EXTRA_MESSAGE_BODY, item.getBody());
+								dialog.dismiss();
+								startActivity(i);
+								break;
+							default:
+								break;
+							}
+						}
+					});
+			b.create().show();
+			return false;
+		}
+	};
 
 	private ServiceConnection connection = new ServiceConnection() {
 		public void onServiceDisconnected(ComponentName name) {
@@ -100,10 +129,10 @@ public class SmsConversation extends Fragment {
 				SmsModel smsModel = (SmsModel) m.getData().getSerializable(
 						SmsSendHelper.EXTRA_MESSAGE);
 				int pos = m.getData().getInt(EXTRA_ADAPTER_POSITION);
-//				items.remove(pos);
+				items.remove(pos);
 				items.add(smsModel);
 				updateItems(false);
-				Cache.delete(info);
+				Cache.delete(info.getThreadId());
 				Cache.addToRefreshSet(info.getThreadId());
 				break;
 			case SendTaskService.CANCEL_MESSAGE:
@@ -114,11 +143,9 @@ public class SmsConversation extends Fragment {
 						position);
 				if (items.size() == 0) {
 					smsAccessor.deleteThread(info.getThreadId());
+					draftAvailableListener.draftTextAvailable("", position);
 					act.finish();
 				}
-				Cache.delete(info);
-				Cache.delete(info);
-				Cache.addToRefreshSet(info.getThreadId());
 				break;
 			default:
 				break;
@@ -131,7 +158,7 @@ public class SmsConversation extends Fragment {
 			public void run() {
 				SmsModel m = new SmsModel(0, info.getThreadId(), info
 						.getAddress(), "", System.currentTimeMillis(),
-						messageBody, SmsModel.MESSAGE_TYPE_SENT,
+						messageBody, SmsModel.MESSAGE_TYPE_QUEUED,
 						SmsModel.MESSAGE_NOT_READ, SmsModel.STATUS_WAITING);
 				Uri u = smsAccessor.insertSms(SmsDbHelper.SMS_URI, m);
 				m.setAddressDisplayName(info.getDisplayName());
@@ -141,13 +168,14 @@ public class SmsConversation extends Fragment {
 				Bundle b = new Bundle();
 				b.putSerializable(SmsSendHelper.EXTRA_MESSAGE, m);
 				b.putString(EXTRA_CLIENT_ID, clientId);
+				b.putInt(EXTRA_ADAPTER_POSITION, items.size());
 				message.what = SendTaskService.QUEUE_MESSAGE;
 				message.setData(b);
 				try {
 					mService.send(message);
 					items.add(m);
 					adapter.notifyDataSetChanged();
-					smsList.setSelection(smsList.getCount()-1);
+					smsList.setSelection(smsList.getCount() - 1);
 				} catch (RemoteException e) {
 					e.printStackTrace();
 				}
@@ -163,17 +191,19 @@ public class SmsConversation extends Fragment {
 				smsAccessor.deleteSms(SmsDbHelper.SMS_URI,
 						b.getLong(EXTRA_MESSAGE_ID));
 				items.remove(b.getInt(EXTRA_ADAPTER_POSITION));
-				Cache.delete(info);
+				Cache.delete(info.getThreadId());
 				Cache.addToRefreshSet(info.getThreadId());
 				if (items.size() == 0) {
+					draftAvailableListener.draftTextAvailable("", position);
 					act.finish();
 				}
 				adapter.notifyDataSetChanged();
 				break;
 			case ACTION_DELETE_THREAD:
 				smsAccessor.deleteThread(b.getLong(EXTRA_THREAD_ID));
-				Cache.delete(info);
+				Cache.delete(info.getThreadId());
 				Cache.addToRefreshSet(info.getThreadId());
+				draftAvailableListener.draftTextAvailable("", position);
 				act.finish();
 				break;
 			case ACTION_FORWARD:
@@ -234,7 +264,7 @@ public class SmsConversation extends Fragment {
 			if (success) {
 				items.add(0, sendingNow);
 				adapter.notifyDataSetChanged();
-				Cache.delete(info);
+				Cache.delete(info.getThreadId());
 				Cache.addToRefreshSet(info.getThreadId());
 			}
 		}
@@ -258,13 +288,13 @@ public class SmsConversation extends Fragment {
 		bar = (LinearLayout) v.findViewById(R.id.sms_thread_progress_bar);
 		smsList = (ListView) v.findViewById(R.id.sms_thread_sms_list);
 		smsList.setOnItemClickListener(itemClickListener);
-		smsList.setOnLongClickListener(itemLongClickListener);
+		smsList.setOnItemLongClickListener(itemLongClickListener);
 		info = (ConversationModel) getArguments().getSerializable(
 				EXTRA_CONVERSATION_INFO);
 	}
 
-	public void updateItems(boolean b) {
-		if (b) {
+	public void updateItems(boolean reload) {
+		if (reload) {
 			items = smsAccessor.getSmsForThread(info.getThreadId());
 		}
 		adapter = new SmsAdapter(act, R.layout.left_sms_item,
@@ -279,17 +309,13 @@ public class SmsConversation extends Fragment {
 		super.onActivityCreated(savedInstanceState);
 		act.bindService(new Intent(act, SendTaskService.class), connection,
 				Context.BIND_AUTO_CREATE);
-		if (info.isDraft()) {
-			draftAvailableListener.draftTextAvailable(info.getSnippet(),
-					position);
-		}
 		smsThreadHandler.post(new Runnable() {
 			public void run() {
 				updateItems(true);
 				bar.setVisibility(View.GONE);
 				smsList.setVisibility(View.VISIBLE);
 				if (getArguments().getBoolean("send_now")) {
-					sendFromMainScreen(items.get(0));
+					sendFromMainScreen(items.get(items.size() - 1));
 				}
 			}
 		});
@@ -300,6 +326,7 @@ public class SmsConversation extends Fragment {
 		Bundle b = new Bundle();
 		b.putSerializable(SmsSendHelper.EXTRA_MESSAGE, smsModel);
 		b.putString(EXTRA_CLIENT_ID, clientId);
+		b.putInt(EXTRA_ADAPTER_POSITION, items.size() - 1);
 		message.what = SendTaskService.QUEUE_MESSAGE;
 		message.setData(b);
 		try {
@@ -353,6 +380,15 @@ public class SmsConversation extends Fragment {
 		}
 		act.unbindService(connection);
 		super.onDestroyView();
+	}
+
+	@Override
+	public void onResume() {
+		if (info.isDraft()) {
+			draftAvailableListener.draftTextAvailable(info.getSnippet(),
+					position);
+		}
+		super.onResume();
 	}
 
 }

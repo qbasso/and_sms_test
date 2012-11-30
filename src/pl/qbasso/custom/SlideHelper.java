@@ -76,7 +76,7 @@ public class SlideHelper {
 	private static final int MODE_DRAG = 0;
 	private static final int MODE_OTHER = 1;
 
-	private int touchMode;
+	private int touchMode = MODE_OTHER;
 	float previousX;
 	float startX;
 	float diff;
@@ -285,10 +285,10 @@ public class SlideHelper {
 
 	public boolean handleTouchEvent(MotionEvent ev) {
 		if (menuShown
-				&& ((ev.getX() > SlideHelper.menuSizePx && ev.getHistorySize() == 0) || (touchMode == MODE_DRAG))) {
+				&& ((ev.getX() > SlideHelper.menuSizePx && ev.getHistorySize() == 0) || (touchMode==MODE_DRAG))) {
 			int tempDiff;
 			if (ev.getAction() == MotionEvent.ACTION_DOWN
-					&& ev.getX() > SlideHelper.menuSizePx) {
+					&& ev.getX() > SlideHelper.menuSizePx && touchMode==MODE_OTHER) {
 				touchMode = MODE_DRAG;
 				startX = previousX = ev.getX();
 			} else if (touchMode == MODE_DRAG

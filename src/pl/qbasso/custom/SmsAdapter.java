@@ -17,7 +17,7 @@ import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.widget.ArrayAdapter;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout.LayoutParams;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 // TODO: Auto-generated Javadoc
@@ -62,34 +62,27 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 	/** The context. */
 	private Context context;
 
+	private static class Holder {
+		/** The background. */
+		protected LinearLayout background;
+
+		/** The msg body. */
+		protected TextView msgBody;
+
+		/** The msg date. */
+		protected TextView msgDate;
+	}
+	
 	/**
 	 * The Class LeftItemHolder.
 	 */
-	private static class LeftItemHolder {
-
-		/** The background. */
-		LinearLayout background;
-
-		/** The msg body. */
-		TextView msgBody;
-
-		/** The msg date. */
-		TextView msgDate;
+	private static class LeftItemHolder extends Holder {
 	}
 
 	/**
 	 * The Class RightItemHolder.
 	 */
-	private static class RightItemHolder {
-
-		/** The background. */
-		LinearLayout background;
-
-		/** The msg body. */
-		TextView msgBody;
-
-		/** The msg date. */
-		TextView msgDate;
+	private static class RightItemHolder extends Holder {
 	}
 
 	@Override
@@ -132,6 +125,7 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 			leftHolder.msgBody.setText(item.getBody());
 			leftHolder.msgBody.setAutoLinkMask(Linkify.ALL);
 			leftHolder.msgDate.setText(Utils.formatDate(item.getDate()));
+//			addMarginsForLastElement(position, leftHolder);
 			if (item.getStatus() == SmsModel.STATUS_WAITING) {
 				leftHolder.background.startAnimation(AnimationUtils
 						.loadAnimation(context, R.anim.shake));
@@ -151,7 +145,8 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 			rightHolder.msgBody.setText(Html.fromHtml(getContext().getString(
 					R.string.message_body, displayName, item.getBody())));
 			rightHolder.msgBody.setAutoLinkMask(Linkify.PHONE_NUMBERS);
-			rightHolder.msgDate.setText(Utils.formatDate(item.getDate()));			
+			rightHolder.msgDate.setText(Utils.formatDate(item.getDate()));
+//			addMarginsForLastElement(position, rightHolder);
 			if (item.getStatus() == SmsModel.STATUS_WAITING) {
 				rightHolder.background.startAnimation(AnimationUtils
 						.loadAnimation(context, R.anim.shake));
@@ -162,6 +157,20 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 		}
 		return null;
 	}
+
+	private void addMarginsForLastElement(int position, Holder holder) {
+		if (position == items.size() - 1) {
+			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) holder.background
+					.getLayoutParams();
+			params.setMargins(0, Utils.dpiToPx(context.getResources()
+					.getDisplayMetrics(), 16), 0, Utils.dpiToPx(context
+							.getResources().getDisplayMetrics(), 50));
+			holder.background.setLayoutParams(params);
+			
+		}
+	}
+	
+	
 
 	/**
 	 * Initialize left holder.
@@ -198,7 +207,8 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 	 */
 	@Override
 	public int getItemViewType(int position) {
-		return items.get(position).getSmsType() == SmsModel.MESSAGE_TYPE_SENT ? LEFT
+		int type = items.get(position).getSmsType();
+		return type == SmsModel.MESSAGE_TYPE_SENT || type == SmsModel.MESSAGE_TYPE_QUEUED || type == SmsModel.MESSAGE_TYPE_FAILED ? LEFT
 				: RIGHT;
 	}
 

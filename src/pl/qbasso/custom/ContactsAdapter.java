@@ -22,7 +22,6 @@ import android.widget.Filter;
 import android.widget.Filterable;
 import android.widget.TextView;
 
-
 // TODO: Auto-generated Javadoc
 /**
  * The Class ContactsAdapter.
@@ -30,11 +29,18 @@ import android.widget.TextView;
 public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 		Filterable {
 
+	private static final String[] CHARACTERS_TO_REPLACE = { "π", "Ê", "Í", "Û",
+			"≥", "ü", "ø", "•", "∆", " ", "”", "£", "è", "Ø" };
+	private static final CharSequence[] REPLACEMENTS = { "a", "c", "e", "o",
+			"l", "z", "z", "A", "C", "E", "O", "L", "Z", "Z" };
+
 	/**
 	 * Instantiates a new contacts adapter.
-	 *
-	 * @param context the context
-	 * @param textViewResourceId the text view resource id
+	 * 
+	 * @param context
+	 *            the context
+	 * @param textViewResourceId
+	 *            the text view resource id
 	 */
 	public ContactsAdapter(Context context, int textViewResourceId) {
 		super(context, textViewResourceId);
@@ -48,39 +54,41 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 
 	/** The inflater. */
 	private LayoutInflater inflater;
-	
+
 	/** The items. */
 	private List<ContactModel> items;
-	
+
 	/** The filtered items. */
 	private List<ContactModel> filteredItems;
-	
+
 	/** The resource id. */
 	private int resourceId;
-	
+
 	/** The filter. */
 	private Filter filter;
-	
+
 	/** The resolver. */
 	private ContentResolver resolver;
-	
+
 	/** The currently selected display name. */
 	private String currentlySelectedDisplayName;
-	
+
 	/** The last constraint length. */
 	private int lastConstraintLength = 0;
-	
+
 	/** The Constant ACTION_RELOAD. */
 	private static final int ACTION_RELOAD = 0;
-	
+
 	/** The Constant ACTION_RESTRICT. */
 	private static final int ACTION_RESTRICT = 1;
 
 	/**
 	 * Gets the contacts.
-	 *
-	 * @param constraint the constraint
-	 * @param action the action
+	 * 
+	 * @param constraint
+	 *            the constraint
+	 * @param action
+	 *            the action
 	 * @return the contacts
 	 */
 	private void getContacts(CharSequence constraint, int action) {
@@ -104,8 +112,9 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 
 	/**
 	 * Reload items.
-	 *
-	 * @param constraint the constraint
+	 * 
+	 * @param constraint
+	 *            the constraint
 	 */
 	private void reloadItems(CharSequence constraint) {
 		Cursor c;
@@ -141,6 +150,7 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 			filter = new Filter() {
 				@Override
 				protected FilterResults performFiltering(CharSequence constraint) {
+//					constraint = TextUtils.replace(constraint, CHARACTERS_TO_REPLACE, REPLACEMENTS);
 					FilterResults result = new FilterResults();
 					filteredItems.clear();
 					if (lastConstraintLength == 0) {
@@ -162,8 +172,11 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 
 				@Override
 				public CharSequence convertResultToString(Object resultValue) {
-					currentlySelectedDisplayName = ((ContactModel) resultValue).getDisplayName(); 
-					return ((ContactModel) resultValue).getPhoneNumber();
+					currentlySelectedDisplayName = ((ContactModel) resultValue)
+							.getDisplayName();
+					return String.format("%s (%s)",
+							((ContactModel) resultValue).getDisplayName(),
+							((ContactModel) resultValue).getPhoneNumber());
 
 				}
 			};
@@ -176,7 +189,9 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 		return filteredItems.size();
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see android.widget.ArrayAdapter#getItem(int)
 	 */
 	@Override
@@ -184,8 +199,11 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 		return filteredItems.get(position);
 	}
 
-	/* (non-Javadoc)
-	 * @see android.widget.ArrayAdapter#getView(int, android.view.View, android.view.ViewGroup)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see android.widget.ArrayAdapter#getView(int, android.view.View,
+	 * android.view.ViewGroup)
 	 */
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
@@ -207,7 +225,8 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 		return currentlySelectedDisplayName;
 	}
 
-	public void setCurrentlySelectedDisplayName(String currentlySelectedDisplayName) {
+	public void setCurrentlySelectedDisplayName(
+			String currentlySelectedDisplayName) {
 		this.currentlySelectedDisplayName = currentlySelectedDisplayName;
 	}
 

@@ -6,7 +6,7 @@
     android:orientation="horizontal" >
 
     <LinearLayout
-        android:layout_width="match_parent"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:orientation="vertical" >
@@ -16,10 +16,17 @@
             style="@style/AppFont.Bold"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="6dp"
             android:layout_marginLeft="8dp"
             android:layout_marginRight="8dp"
             android:paddingTop="8dp" />
+
+        <TextView
+            android:id="@+id/thread_item_date"
+            style="@style/AppFont"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
+            android:layout_marginRight="8dp" />
 
         <TextView
             android:id="@+id/thread_item_last_message"
@@ -36,10 +43,10 @@
     <RelativeLayout
         android:id="@+id/thread_item_unread_icon"
         android:layout_width="wrap_content"
-        android:layout_marginLeft="8dp"
-        android:layout_marginRight="8dp"
         android:layout_height="wrap_content"
-        android:layout_gravity="center" >
+        android:layout_gravity="center"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp" >
 
         <ImageView
             android:layout_width="35dp"
@@ -49,10 +56,10 @@
 
         <TextView
             android:id="@+id/thread_item_unread_count"
-            android:layout_centerInParent="true"
             style="@style/AppFont.Bold"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true" />
     </RelativeLayout>
 
 </LinearLayout>
