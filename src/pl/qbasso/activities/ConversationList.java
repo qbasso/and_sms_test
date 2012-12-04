@@ -250,14 +250,14 @@ public class ConversationList extends Activity {
 				@Override
 				public void onReceive(Context context, Intent intent) {
 					if (intent.getAction().equals(SmsSendHelper.ACTION_UPDATE)) {
+						SmsModel m = (SmsModel) intent
+								.getSerializableExtra(SmsSendHelper.EXTRA_MESSAGE);						
 						updateItems(true);
 						if (slideHelper.isMenuShown()) {
 							slideHelper.hideMenu(false);
 						}
 						if (intent.getBooleanExtra(
 								SmsSendHelper.EXTRA_LAUNCH_CONVERSATION, false)) {
-							SmsModel m = (SmsModel) intent
-									.getSerializableExtra(SmsSendHelper.EXTRA_MESSAGE);
 							ConversationModel cm = new ConversationModel(
 									m.getThreadId(), 0, "");
 							ArrayList<ConversationModel> list = new ArrayList<ConversationModel>();

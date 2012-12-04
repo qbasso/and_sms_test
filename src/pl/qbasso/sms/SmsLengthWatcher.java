@@ -23,6 +23,12 @@ public class SmsLengthWatcher implements TextWatcher {
 	/** The ctx. */
 	private Context ctx;
 
+	private int len;
+
+	private int multipartPenalty;
+
+	private int limit;
+
 	/**
 	 * Instantiates a new sms length watcher.
 	 * 
@@ -44,8 +50,6 @@ public class SmsLengthWatcher implements TextWatcher {
 	 */
 	public void onTextChanged(CharSequence s, int start, int before, int count) {
 		// TODO Auto-generated method stub
-		int len;
-		int multipartPenalty;
 		if (s.length() > 0) {
 			if (Utils.isAscii(s.toString())) {
 				len = SmsModel.ASCII_SMS_LENGTH;
@@ -54,7 +58,7 @@ public class SmsLengthWatcher implements TextWatcher {
 				len = SmsModel.UNICODE_SMS_LENGTH;
 				multipartPenalty = SmsModel.MULTIPART_SMS_PENALTY_UNICODE;
 			}
-			int limit = s.length() / len;
+			limit = s.length() / len;
 			if (s.length() % len != 0) {
 				limit++;
 			}
@@ -69,6 +73,11 @@ public class SmsLengthWatcher implements TextWatcher {
 	 * @see android.text.TextWatcher#afterTextChanged(android.text.Editable)
 	 */
 	public void afterTextChanged(Editable arg0) {
+		if (arg0.toString().length()==0) {
+			limit = 1;
+			output.setText(ctx.getString(R.string.sms_length, 0, limit
+					* len - ((limit - 1) * multipartPenalty), 0));
+		}
 	}
 
 	/*

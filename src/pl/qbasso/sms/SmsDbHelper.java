@@ -218,7 +218,6 @@ public class SmsDbHelper {
 	}
 
 	public List<ConversationModel> getThreads(HashSet<Long> needRefresh) {
-		Cursor c1 = null;
 		Cursor c = null;
 		List<ConversationModel> result = new ArrayList<ConversationModel>();
 		if (needRefresh == null) {

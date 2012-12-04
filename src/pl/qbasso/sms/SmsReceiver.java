@@ -41,7 +41,7 @@ public class SmsReceiver extends BroadcastReceiver {
 	private static NotificationManager nm;
 	private static AlarmManager am;
 	private static SmsDbHelper smsDb;
-	private static final int NOTIFICATION_ID = 1;
+	public static final int NOTIFICATION_ID = 1;
 	public static final String EXTRA_CANCEL_ALARM = "cancel_alarm";
 
 	/*
@@ -53,9 +53,8 @@ public class SmsReceiver extends BroadcastReceiver {
 	@Override
 	public void onReceive(Context ctx, Intent i) {
 		SmsMessage msg = null;
-		String sender;
-		String body;
-		long threadId = 0;
+		SmsModel model = null;
+		String previousOriginatingAddress = null;
 		if (smsDb == null) {
 			smsDb = new SmsDbHelper(ctx.getContentResolver());
 		}
@@ -74,31 +73,23 @@ public class SmsReceiver extends BroadcastReceiver {
 				Object[] pdus = (Object[]) bundle.get(EXTRA_PDUS);
 				for (Object m : pdus) {
 					msg = SmsMessage.createFromPdu((byte[]) m);
-					sender = smsDb.getDisplayName(msg.getOriginatingAddress());
-					threadId = smsDb.getThreadIdForPhoneNumber(msg
-							.getOriginatingAddress());
-					body = msg.getMessageBody();
-					SmsModel model = new SmsModel(0, threadId,
-							msg.getOriginatingAddress(), "",
-							System.currentTimeMillis(), body,
-							SmsModel.MESSAGE_TYPE_INBOX,
-							SmsModel.MESSAGE_NOT_READ, SmsModel.STATUS_COMPLETE);
-					model.setAddressDisplayName(sender);
-					Uri u = smsDb.insertSms(SmsDbHelper.SMS_URI, model);
-					if (threadId == -1) {
-						threadId = smsDb.getThreadIdForSmsUri(u);
+					if (previousOriginatingAddress == null) {
+						previousOriginatingAddress = msg
+								.getOriginatingAddress();
+						model = createModel(msg);
+					} else if (!previousOriginatingAddress.equals(msg
+							.getOriginatingAddress())) {
+						notify(ctx, model);
+						previousOriginatingAddress = msg
+								.getOriginatingAddress();
+						model = createModel(msg);
+					} else {
+						previousOriginatingAddress = msg
+								.getOriginatingAddress();
+						model.setBody(model.getBody() + msg.getMessageBody());
 					}
-					Notification n = prepareNotification(ctx,
-							msg.getMessageBody(), msg.getOriginatingAddress(),
-							threadId, sender, true);
-
-					nm.notify(null, NOTIFICATION_ID, n);
-					Intent intent = new Intent(ACTION_UPDATE);
-					Cache.delete(threadId);
-					Cache.addToRefreshSet(threadId);
-					intent.putExtra(EXTRA_THREAD_ID, threadId);
-					ctx.sendBroadcast(intent);
 				}
+				notify(ctx, model);
 			}
 			this.abortBroadcast();
 		} else if (i.getAction().equals(ACTION_CANCEL_LIGHT)) {
@@ -107,9 +98,43 @@ public class SmsReceiver extends BroadcastReceiver {
 					i.getStringExtra(EXTRA_SENDER_ADDRESS),
 					i.getLongExtra(EXTRA_THREAD_ID, 0),
 					i.getStringExtra(EXTRA_SENDER_DISPLAY_NAME), false);
-			nm.notify(null, NOTIFICATION_ID, n);
+			nm.notify(i.getStringExtra(EXTRA_SENDER_ADDRESS), NOTIFICATION_ID,
+					n);
 		}
 
+	}
+
+	private SmsModel createModel(SmsMessage msg) {
+		SmsModel model;
+		String sender;
+		String body;
+		long threadId;
+		sender = smsDb.getDisplayName(msg.getOriginatingAddress());
+		threadId = smsDb.getThreadIdForPhoneNumber(msg.getOriginatingAddress());
+		body = msg.getMessageBody();
+		model = new SmsModel(0, threadId, msg.getOriginatingAddress(), "",
+				System.currentTimeMillis(), body, SmsModel.MESSAGE_TYPE_INBOX,
+				SmsModel.MESSAGE_NOT_READ, SmsModel.STATUS_COMPLETE);
+		model.setAddressDisplayName(sender);
+		return model;
+	}
+
+	private void notify(Context ctx, SmsModel model) {
+		long threadId;
+		Uri u = smsDb.insertSms(SmsDbHelper.SMS_URI, model);
+		if (model.getThreadId() == -1) {
+			threadId = smsDb.getThreadIdForSmsUri(u);
+			model.setThreadId(threadId);
+		}
+		Notification n = prepareNotification(ctx, model.getBody(),
+				model.getAddress(), model.getThreadId(),
+				model.getAddressDisplayName(), true);
+		nm.notify(model.getAddress(), NOTIFICATION_ID, n);
+		Intent intent = new Intent(ACTION_UPDATE);
+		Cache.delete(model.getThreadId());
+		Cache.addToRefreshSet(model.getThreadId());
+		intent.putExtra(EXTRA_THREAD_ID, model.getThreadId());
+		ctx.sendBroadcast(intent);
 	}
 
 	/**

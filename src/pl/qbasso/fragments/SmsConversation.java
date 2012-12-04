@@ -15,11 +15,13 @@ import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.Cache;
 import pl.qbasso.sms.SmsDbHelper;
+import pl.qbasso.sms.SmsReceiver;
 import pl.qbasso.sms.SmsSendHelper;
 import pl.qbasso.smssender.R;
 import pl.qbasso.view.CustomPopup;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -71,6 +73,7 @@ public class SmsConversation extends Fragment {
 	private SmsDraftAvailableListener draftAvailableListener;
 	private Messenger messenger;
 	private Messenger mService;
+	private NotificationManager nm;
 
 	private OnItemLongClickListener itemLongClickListener = new OnItemLongClickListener() {
 
@@ -309,6 +312,8 @@ public class SmsConversation extends Fragment {
 		super.onActivityCreated(savedInstanceState);
 		act.bindService(new Intent(act, SendTaskService.class), connection,
 				Context.BIND_AUTO_CREATE);
+		nm = (NotificationManager) act.getSystemService(Activity.NOTIFICATION_SERVICE);
+		nm.cancel(info.getAddress(), SmsReceiver.NOTIFICATION_ID);
 		smsThreadHandler.post(new Runnable() {
 			public void run() {
 				updateItems(true);

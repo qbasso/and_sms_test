@@ -46,6 +46,8 @@ public class Cache {
 
 	public static synchronized void putAll(
 			Collection<? extends ConversationModel> c) {
+		sPositions.clear();
+		sConversations.clear();
 		for (ConversationModel conversationModel : c) {
 			sConversations.add(conversationModel);
 			sPositions.put(conversationModel.getThreadId(),
