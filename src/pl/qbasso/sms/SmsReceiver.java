@@ -38,6 +38,7 @@ public class SmsReceiver extends BroadcastReceiver {
 	public static final String EXTRA_SENDER_ADDRESS = "sender_address";
 	public static final String EXTRA_MESSAGE_BODY = "message_body";
 	public static final String ACTION_RECEIVE_SMS = "android.provider.Telephony.SMS_RECEIVED";
+	public static final String ACTION_MESSAGE_ARRIVED = "pl.qbasso.sms.smsreceiver.MESSAGE_ARRIVED";
 	public static final String ACTION_CANCEL_LIGHT = "pl.qbasso.sms.smsreceiver.CANCEL_LED";
 	private static NotificationManager nm;
 	private static AlarmManager am;
@@ -91,9 +92,9 @@ public class SmsReceiver extends BroadcastReceiver {
 					}
 				}
 				notify(ctx, model);
-				Intent updateIntent = new Intent(ACTION_UPDATE);
-				updateIntent.putExtra("msg", model);
-				ctx.sendBroadcast(updateIntent);
+				Intent messageArrived = new Intent(ACTION_MESSAGE_ARRIVED);
+				messageArrived.putExtra(SmsSendHelper.EXTRA_MESSAGE, model);
+				ctx.sendBroadcast(messageArrived);
 			}
 			this.abortBroadcast();
 		} else if (i.getAction().equals(ACTION_CANCEL_LIGHT)) {

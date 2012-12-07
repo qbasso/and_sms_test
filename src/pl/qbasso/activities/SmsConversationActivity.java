@@ -7,14 +7,13 @@ import pl.qbasso.custom.SmsThreadPageAdapter;
 import pl.qbasso.fragments.SmsConversation;
 import pl.qbasso.interfaces.ItemSeenListener;
 import pl.qbasso.interfaces.SmsDraftAvailableListener;
-import pl.qbasso.loaders.ConversationLoader;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.Cache;
-import pl.qbasso.sms.CustomReceivers;
 import pl.qbasso.sms.SmsDbHelper;
 import pl.qbasso.sms.SmsLengthWatcher;
 import pl.qbasso.sms.SmsReceiver;
+import pl.qbasso.sms.SmsSendHelper;
 import pl.qbasso.smssender.R;
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -79,12 +78,11 @@ public class SmsConversationActivity extends FragmentActivity implements
 
 		@Override
 		public void onReceive(Context arg0, Intent intent) {
-			int fragmentId = findAdapterByThreadId(intent.getLongExtra(
-					"thread_id", -1));
-			if (intent.getAction().equals(SmsReceiver.ACTION_UPDATE)) {
+			if (intent.getAction().equals(SmsReceiver.ACTION_MESSAGE_ARRIVED)) {
+				SmsModel m = (SmsModel) intent
+						.getSerializableExtra(SmsSendHelper.EXTRA_MESSAGE);
+				int fragmentId = findAdapterByThreadId(m.getThreadId());
 				if (fragmentId == viewPager.getCurrentItem()) {
-					SmsModel m = (SmsModel) intent
-							.getSerializableExtra("msg");
 					((SmsConversation) adapter.getItem(fragmentId))
 							.updateItem(m);
 					nm.cancelAll();
@@ -275,7 +273,7 @@ public class SmsConversationActivity extends FragmentActivity implements
 	@Override
 	protected void onResume() {
 		super.onResume();
-		registerReceiver(receiver, new IntentFilter(SmsReceiver.ACTION_UPDATE));
+		registerReceiver(receiver, new IntentFilter(SmsReceiver.ACTION_MESSAGE_ARRIVED));
 	}
 
 }

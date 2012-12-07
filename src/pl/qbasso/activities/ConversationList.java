@@ -63,7 +63,7 @@ import android.widget.TextView;
  * 
  * @author jakub.porzuczek
  */
-public class ConversationList extends FragmentActivity { //implements LoaderCallbacks<List<ConversationModel>> {
+public class ConversationList extends Activity { //implements LoaderCallbacks<List<ConversationModel>> {
 
 	/**
 	 * The Constant EXTRA_CLIENT_ID. Used when passing intent extra client id to
@@ -305,10 +305,10 @@ public class ConversationList extends FragmentActivity { //implements LoaderCall
 	protected void onResume() {
 		super.onResume();
 		initReceivers();
-//		if (Cache.needRefresh()) {
-//			showProgressDialog();
-//			updateItems(true);
-//		}
+		if (Cache.needRefresh()) {
+			showProgressDialog();
+			updateItems(true);
+		}
 	}
 
 	/** The main handler. */

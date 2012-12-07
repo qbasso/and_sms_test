@@ -312,6 +312,7 @@ public class SmsConversation extends Fragment {
 		Log.i("SmsConversation",
 				String.format("Items after update: %d", items.size()));
 		adapter.notifyDataSetChanged();
+		smsList.setSelection(smsList.getCount()-1);
 	}
 
 	@Override
