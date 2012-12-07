@@ -11,13 +11,15 @@ import pl.qbasso.smssender.R;
 import android.content.Context;
 import android.text.Html;
 import android.text.util.Linkify;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.widget.ArrayAdapter;
+import android.widget.ImageSwitcher;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 // TODO: Auto-generated Javadoc
@@ -71,8 +73,10 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 
 		/** The msg date. */
 		protected TextView msgDate;
+
+		protected ImageView msgStatus;
 	}
-	
+
 	/**
 	 * The Class LeftItemHolder.
 	 */
@@ -125,12 +129,14 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 			leftHolder.msgBody.setText(item.getBody());
 			leftHolder.msgBody.setAutoLinkMask(Linkify.ALL);
 			leftHolder.msgDate.setText(Utils.formatDate(item.getDate()));
-//			addMarginsForLastElement(position, leftHolder);
 			if (item.getStatus() == SmsModel.STATUS_WAITING) {
-				leftHolder.background.startAnimation(AnimationUtils
+				leftHolder.msgStatus.setImageResource(R.drawable.ic_launcher);
+				leftHolder.msgStatus.setVisibility(View.VISIBLE);
+				leftHolder.msgStatus.startAnimation(AnimationUtils
 						.loadAnimation(context, R.anim.shake));
 			} else {
-				leftHolder.background.setAnimation(null);
+				leftHolder.msgStatus.setAnimation(null);
+				leftHolder.msgStatus.setVisibility(View.GONE);
 			}
 			return view;
 		case RIGHT:
@@ -146,31 +152,19 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 					R.string.message_body, displayName, item.getBody())));
 			rightHolder.msgBody.setAutoLinkMask(Linkify.PHONE_NUMBERS);
 			rightHolder.msgDate.setText(Utils.formatDate(item.getDate()));
-//			addMarginsForLastElement(position, rightHolder);
 			if (item.getStatus() == SmsModel.STATUS_WAITING) {
+				rightHolder.msgStatus.setImageResource(R.drawable.ic_launcher);
+				rightHolder.msgStatus.setVisibility(View.VISIBLE);
 				rightHolder.background.startAnimation(AnimationUtils
 						.loadAnimation(context, R.anim.shake));
 			} else {
+				rightHolder.msgStatus.setVisibility(View.GONE);
 				rightHolder.background.setAnimation(null);
 			}
 			return v;
 		}
 		return null;
 	}
-
-	private void addMarginsForLastElement(int position, Holder holder) {
-		if (position == items.size() - 1) {
-			RelativeLayout.LayoutParams params = (RelativeLayout.LayoutParams) holder.background
-					.getLayoutParams();
-			params.setMargins(0, Utils.dpiToPx(context.getResources()
-					.getDisplayMetrics(), 16), 0, Utils.dpiToPx(context
-							.getResources().getDisplayMetrics(), 50));
-			holder.background.setLayoutParams(params);
-			
-		}
-	}
-	
-	
 
 	/**
 	 * Initialize left holder.
@@ -184,6 +178,8 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 		leftHolder.msgDate = (TextView) view.findViewById(R.id.sms_item_date);
 		leftHolder.background = (LinearLayout) view
 				.findViewById(R.id.left_item_background);
+		leftHolder.msgStatus = (ImageView) view
+				.findViewById(R.id.sms_item_status);
 	}
 
 	/**
@@ -198,6 +194,8 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 		rightHolder.msgDate = (TextView) view.findViewById(R.id.sms_item_date);
 		rightHolder.background = (LinearLayout) view
 				.findViewById(R.id.right_item_background);
+		rightHolder.msgStatus = (ImageView) view
+				.findViewById(R.id.sms_item_status);
 	}
 
 	/*
@@ -207,9 +205,11 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 	 */
 	@Override
 	public int getItemViewType(int position) {
+//		Log.i("SmsAdapter", String.format("View position: %d", position));
 		int type = items.get(position).getSmsType();
-		return type == SmsModel.MESSAGE_TYPE_SENT || type == SmsModel.MESSAGE_TYPE_QUEUED || type == SmsModel.MESSAGE_TYPE_FAILED ? LEFT
-				: RIGHT;
+		return type == SmsModel.MESSAGE_TYPE_SENT
+				|| type == SmsModel.MESSAGE_TYPE_QUEUED
+				|| type == SmsModel.MESSAGE_TYPE_FAILED ? LEFT : RIGHT;
 	}
 
 	@Override

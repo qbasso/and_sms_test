@@ -7,9 +7,11 @@ import pl.qbasso.custom.SmsThreadPageAdapter;
 import pl.qbasso.fragments.SmsConversation;
 import pl.qbasso.interfaces.ItemSeenListener;
 import pl.qbasso.interfaces.SmsDraftAvailableListener;
+import pl.qbasso.loaders.ConversationLoader;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.Cache;
+import pl.qbasso.sms.CustomReceivers;
 import pl.qbasso.sms.SmsDbHelper;
 import pl.qbasso.sms.SmsLengthWatcher;
 import pl.qbasso.sms.SmsReceiver;
@@ -70,7 +72,7 @@ public class SmsConversationActivity extends FragmentActivity implements
 
 	/** The ctx. */
 	protected Context ctx;
-	
+
 	private NotificationManager nm;
 
 	private BroadcastReceiver receiver = new BroadcastReceiver() {
@@ -79,12 +81,15 @@ public class SmsConversationActivity extends FragmentActivity implements
 		public void onReceive(Context arg0, Intent intent) {
 			int fragmentId = findAdapterByThreadId(intent.getLongExtra(
 					"thread_id", -1));
-			if (fragmentId == viewPager.getCurrentItem()) {
-				((SmsConversation) adapter.getItem(fragmentId))
-						.updateItems(true);
-				nm.cancelAll();
+			if (intent.getAction().equals(SmsReceiver.ACTION_UPDATE)) {
+				if (fragmentId == viewPager.getCurrentItem()) {
+					SmsModel m = (SmsModel) intent
+							.getSerializableExtra("msg");
+					((SmsConversation) adapter.getItem(fragmentId))
+							.updateItem(m);
+					nm.cancelAll();
+				}
 			}
-
 		}
 	};
 
@@ -140,7 +145,8 @@ public class SmsConversationActivity extends FragmentActivity implements
 		helper = new SmsDbHelper(getContentResolver());
 		setContentView(R.layout.thread_pager);
 		if (getIntent().getBooleanExtra(SmsReceiver.EXTRA_CANCEL_ALARM, false)) {
-			AlarmManager am = (AlarmManager) ctx.getSystemService(Activity.ALARM_SERVICE);
+			AlarmManager am = (AlarmManager) ctx
+					.getSystemService(Activity.ALARM_SERVICE);
 			Intent intent = new Intent(SmsReceiver.ACTION_CANCEL_LIGHT);
 			am.cancel(PendingIntent.getBroadcast(ctx, 0, intent, 0));
 		}
@@ -151,7 +157,7 @@ public class SmsConversationActivity extends FragmentActivity implements
 		int i = 0;
 		for (Object object : l) {
 			listInfo[i++] = (ConversationModel) object;
-		}		
+		}
 		smsLength = (TextView) findViewById(R.id.sms_thread_sms_length);
 		smsLength.setText(getString(R.string.sms_length, 0,
 				SmsModel.ASCII_SMS_LENGTH, 0));
@@ -227,7 +233,8 @@ public class SmsConversationActivity extends FragmentActivity implements
 		if (viewPager.getCurrentItem() == adapterId) {
 			helper.updateSmsRead(messageId, SmsModel.MESSAGE_READ);
 			Cache.delete(listInfo[viewPager.getCurrentItem()].getThreadId());
-			Cache.addToRefreshSet(listInfo[viewPager.getCurrentItem()].getThreadId());
+			Cache.addToRefreshSet(listInfo[viewPager.getCurrentItem()]
+					.getThreadId());
 		}
 	}
 
@@ -268,8 +275,7 @@ public class SmsConversationActivity extends FragmentActivity implements
 	@Override
 	protected void onResume() {
 		super.onResume();
-		registerReceiver(receiver, new IntentFilter(
-				"pl.qbasso.smssender.new_message_arrived"));
+		registerReceiver(receiver, new IntentFilter(SmsReceiver.ACTION_UPDATE));
 	}
 
 }

@@ -7,6 +7,7 @@ import java.util.ArrayList;
 
 import pl.qbasso.activities.ConversationList;
 import pl.qbasso.activities.SmsConversationActivity;
+import pl.qbasso.custom.SendTaskService;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.smssender.R;
@@ -90,6 +91,9 @@ public class SmsReceiver extends BroadcastReceiver {
 					}
 				}
 				notify(ctx, model);
+				Intent updateIntent = new Intent(ACTION_UPDATE);
+				updateIntent.putExtra("msg", model);
+				ctx.sendBroadcast(updateIntent);
 			}
 			this.abortBroadcast();
 		} else if (i.getAction().equals(ACTION_CANCEL_LIGHT)) {
@@ -98,7 +102,7 @@ public class SmsReceiver extends BroadcastReceiver {
 					i.getStringExtra(EXTRA_SENDER_ADDRESS),
 					i.getLongExtra(EXTRA_THREAD_ID, 0),
 					i.getStringExtra(EXTRA_SENDER_DISPLAY_NAME), false);
-			nm.notify(i.getStringExtra(EXTRA_SENDER_ADDRESS), NOTIFICATION_ID,
+			nm.notify("", NOTIFICATION_ID,
 					n);
 		}
 
@@ -129,7 +133,7 @@ public class SmsReceiver extends BroadcastReceiver {
 		Notification n = prepareNotification(ctx, model.getBody(),
 				model.getAddress(), model.getThreadId(),
 				model.getAddressDisplayName(), true);
-		nm.notify(model.getAddress(), NOTIFICATION_ID, n);
+		nm.notify("", NOTIFICATION_ID, n);
 		Intent intent = new Intent(ACTION_UPDATE);
 		Cache.delete(model.getThreadId());
 		Cache.addToRefreshSet(model.getThreadId());

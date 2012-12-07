@@ -10,6 +10,7 @@ import pl.qbasso.custom.SendTaskService;
 import pl.qbasso.custom.SlideHelper;
 import pl.qbasso.custom.Utils;
 import pl.qbasso.interfaces.SlidingViewLoadedListener;
+import pl.qbasso.loaders.ConversationLoader;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.Cache;
@@ -39,6 +40,9 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Intents.Insert;
+import android.support.v4.app.FragmentActivity;
+import android.support.v4.app.LoaderManager.LoaderCallbacks;
+import android.support.v4.content.Loader;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
@@ -59,7 +63,7 @@ import android.widget.TextView;
  * 
  * @author jakub.porzuczek
  */
-public class ConversationList extends Activity {
+public class ConversationList extends FragmentActivity { //implements LoaderCallbacks<List<ConversationModel>> {
 
 	/**
 	 * The Constant EXTRA_CLIENT_ID. Used when passing intent extra client id to
@@ -301,10 +305,10 @@ public class ConversationList extends Activity {
 	protected void onResume() {
 		super.onResume();
 		initReceivers();
-		if (Cache.needRefresh()) {
-			showProgressDialog();
-			updateItems(true);
-		}
+//		if (Cache.needRefresh()) {
+//			showProgressDialog();
+//			updateItems(true);
+//		}
 	}
 
 	/** The main handler. */
@@ -378,6 +382,7 @@ public class ConversationList extends Activity {
 							SmsReceiver.ACTION_CANCEL_LIGHT), 0));
 		}
 		initViewMembers();
+//		getSupportLoaderManager().initLoader(0, null, this).forceLoad();
 		showProgressDialog();
 		updateItems(false);
 	}
@@ -563,4 +568,20 @@ public class ConversationList extends Activity {
 			return super.dispatchTouchEvent(ev);
 		}
 	}
+
+//	public Loader<List<ConversationModel>> onCreateLoader(int arg0, Bundle arg1) {
+//		return new ConversationLoader(ctx);
+//	}
+//
+//	public void onLoadFinished(Loader<List<ConversationModel>> arg0,
+//			List<ConversationModel> arg1) {
+//		items = arg1;
+//		mainHandler.sendEmptyMessage(0);
+//	}
+//
+//	public void onLoaderReset(Loader<List<ConversationModel>> arg0) {
+//		items = new ArrayList<ConversationModel>();
+//		mainHandler.sendEmptyMessage(0);
+//	}
+
 }

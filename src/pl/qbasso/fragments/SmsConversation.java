@@ -307,12 +307,20 @@ public class SmsConversation extends Fragment {
 		smsList.setSelection(smsList.getCount() - 1);
 	}
 
+	public void updateItem(SmsModel m) {
+		items.add(m);
+		Log.i("SmsConversation",
+				String.format("Items after update: %d", items.size()));
+		adapter.notifyDataSetChanged();
+	}
+
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
 		act.bindService(new Intent(act, SendTaskService.class), connection,
 				Context.BIND_AUTO_CREATE);
-		nm = (NotificationManager) act.getSystemService(Activity.NOTIFICATION_SERVICE);
+		nm = (NotificationManager) act
+				.getSystemService(Activity.NOTIFICATION_SERVICE);
 		nm.cancel(info.getAddress(), SmsReceiver.NOTIFICATION_ID);
 		smsThreadHandler.post(new Runnable() {
 			public void run() {

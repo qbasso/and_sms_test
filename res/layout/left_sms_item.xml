@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="4dp" >
 
@@ -10,24 +10,47 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:layout_marginBottom="8dp"
         android:layout_marginLeft="8dp"
         android:layout_marginRight="40dp"
-        android:layout_marginTop="8dp"
         android:background="@drawable/left_item_background"
-        android:orientation="vertical" >
+        android:orientation="horizontal" >
 
-        <TextView
-            android:id="@+id/sms_item_body"
-            style="@style/AppFont"
+        <RelativeLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="match_parent" >
 
-        <TextView
-            android:id="@+id/sms_item_date"
-            style="@style/AppFont.Small"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            <ImageView
+                android:id="@+id/sms_item_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentRight="true"
+                android:layout_centerVertical="true"
+                android:layout_marginLeft="8dp"
+                android:layout_marginRight="8dp"
+                android:src="@drawable/ic_launcher"
+                android:visibility="visible" >
+                   </ImageView>
+            <TextView
+                android:layout_alignParentTop="true"
+                android:layout_alignParentLeft="true"
+                android:layout_toLeftOf="@id/sms_item_status"
+                android:id="@+id/sms_item_body"
+                style="@style/AppFont"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="dadasdasdsagdkhsadashdbas" />
+
+            <TextView
+                android:layout_below="@id/sms_item_body"
+                android:id="@+id/sms_item_date"
+                style="@style/AppFont.Small"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="ueozhleiwdd.as" />
+
+         
+        </RelativeLayout>
     </LinearLayout>
 
 </RelativeLayout>

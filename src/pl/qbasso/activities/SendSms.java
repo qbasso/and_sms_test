@@ -68,6 +68,7 @@ public class SendSms extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		Uri u = getIntent().getData();
 		ctx = this;
 		smsAccessor = new SmsDbHelper(getContentResolver());
 		setContentView(R.layout.send_sms_screen);
@@ -84,6 +85,9 @@ public class SendSms extends Activity {
 		if (getIntent().getStringExtra(EXTRA_MESSAGE_BODY) != null) {
 			messageInput
 					.setText(getIntent().getStringExtra(EXTRA_MESSAGE_BODY));
+		}
+		if (u != null) {
+			contactInput.setText(u.getSchemeSpecificPart());
 		}
 	}
 
