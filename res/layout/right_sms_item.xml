@@ -20,7 +20,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical" >
 
-            <TextView
+            <pl.qbasso.custom.LinkEnabledTextView
                 android:id="@+id/sms_item_body"
                 style="@style/AppFont"
                 android:layout_width="wrap_content"

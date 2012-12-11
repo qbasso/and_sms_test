@@ -35,10 +35,13 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.app.Fragment;
+import android.text.util.Linkify;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.AdapterView.OnItemLongClickListener;
@@ -132,6 +135,7 @@ public class SmsConversation extends Fragment {
 				SmsModel smsModel = (SmsModel) m.getData().getSerializable(
 						SmsSendHelper.EXTRA_MESSAGE);
 				int pos = m.getData().getInt(EXTRA_ADAPTER_POSITION);
+				
 				items.remove(pos);
 				items.add(smsModel);
 				updateItems(false);
@@ -188,19 +192,26 @@ public class SmsConversation extends Fragment {
 
 	protected ActionClickListener mActionClickListener = new ActionClickListener() {
 
-		public void onItemClick(int pos, Bundle b) {
+		public void onItemClick(View v, int pos, final Bundle b) {
 			switch (pos) {
 			case ACTION_DELETE_MESSAGE:
 				smsAccessor.deleteSms(SmsDbHelper.SMS_URI,
 						b.getLong(EXTRA_MESSAGE_ID));
-				items.remove(b.getInt(EXTRA_ADAPTER_POSITION));
-				Cache.delete(info.getThreadId());
-				Cache.addToRefreshSet(info.getThreadId());
-				if (items.size() == 0) {
-					draftAvailableListener.draftTextAvailable("", position);
-					act.finish();
-				}
-				adapter.notifyDataSetChanged();
+				Animation anim = AnimationUtils.loadAnimation(act, R.anim.slide_right);
+				v.startAnimation(anim);
+				smsThreadHandler.postDelayed(new Runnable() {
+					public void run() {
+						items.remove(b.getInt(EXTRA_ADAPTER_POSITION));
+						Cache.delete(info.getThreadId());
+						Cache.addToRefreshSet(info.getThreadId());
+						if (items.size() == 0) {
+							draftAvailableListener.draftTextAvailable("", position);
+							act.finish();
+						}
+						adapter.notifyDataSetChanged();
+						
+					}
+				}, anim.getDuration());
 				break;
 			case ACTION_DELETE_THREAD:
 				smsAccessor.deleteThread(b.getLong(EXTRA_THREAD_ID));
@@ -245,13 +256,13 @@ public class SmsConversation extends Fragment {
 				b.putInt(EXTRA_ADAPTER_POSITION, arg2);
 				ActionModel am = new ActionModel(
 						act.getString(R.string.action_delete_message), 0,
-						ACTION_DELETE_MESSAGE, b);
+						ACTION_DELETE_MESSAGE, b, arg1);
 				ActionModel am1 = new ActionModel(
 						act.getString(R.string.action_delete_thread), 0,
-						ACTION_DELETE_THREAD, b);
+						ACTION_DELETE_THREAD, b, arg1);
 				ActionModel am2 = new ActionModel(
 						act.getString(R.string.action_forward), 0,
-						ACTION_FORWARD, b);
+						ACTION_FORWARD, b, arg1);
 				p.addAction(am);
 				p.addAction(am1);
 				p.addAction(am2);
@@ -320,15 +331,12 @@ public class SmsConversation extends Fragment {
 		super.onActivityCreated(savedInstanceState);
 		act.bindService(new Intent(act, SendTaskService.class), connection,
 				Context.BIND_AUTO_CREATE);
-		nm = (NotificationManager) act
-				.getSystemService(Activity.NOTIFICATION_SERVICE);
-		nm.cancel(info.getAddress(), SmsReceiver.NOTIFICATION_ID);
 		smsThreadHandler.post(new Runnable() {
 			public void run() {
 				updateItems(true);
 				bar.setVisibility(View.GONE);
 				smsList.setVisibility(View.VISIBLE);
-				if (getArguments().getBoolean("send_now")) {
+				if (getArguments().getBoolean("send_now") && position == 0) {
 					sendFromMainScreen(items.get(items.size() - 1));
 				}
 			}

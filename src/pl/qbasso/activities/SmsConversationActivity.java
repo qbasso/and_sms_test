@@ -82,10 +82,12 @@ public class SmsConversationActivity extends FragmentActivity implements
 				SmsModel m = (SmsModel) intent
 						.getSerializableExtra(SmsSendHelper.EXTRA_MESSAGE);
 				int fragmentId = findAdapterByThreadId(m.getThreadId());
-				if (fragmentId == viewPager.getCurrentItem()) {
+				int currentPage = viewPager.getCurrentItem();
+				if (fragmentId == currentPage) {
 					((SmsConversation) adapter.getItem(fragmentId))
 							.updateItem(m);
 					nm.cancelAll();
+					onItemSeen(currentPage, m.getId());
 				}
 			}
 		}

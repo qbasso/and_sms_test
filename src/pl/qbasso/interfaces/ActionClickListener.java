@@ -4,6 +4,7 @@
 package pl.qbasso.interfaces;
 
 import android.os.Bundle;
+import android.view.View;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -25,6 +26,6 @@ public interface ActionClickListener {
 	 * @param pos the pos
 	 * @param b the b
 	 */
-	void onItemClick(int pos, Bundle b);
+	void onItemClick(View view, int pos, Bundle b);
 
 }

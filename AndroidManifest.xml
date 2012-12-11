@@ -40,7 +40,7 @@
 
         <receiver android:name="pl.qbasso.sms.SmsReceiver" >
             <intent-filter android:priority="1000" >
-                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+                <action android:name="android.provider.Telephony.SMS_RECEIVED2" />
                 <action android:name="pl.qbasso.sms.smsreceiver.CANCEL_LED" />
             </intent-filter>
         </receiver>

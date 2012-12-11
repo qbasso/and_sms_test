@@ -14,6 +14,8 @@ public final class R {
         public static final int expand_from_bottom=0x7f040002;
         public static final int expand_from_top=0x7f040003;
         public static final int shake=0x7f040004;
+        public static final int shrink_anim=0x7f040005;
+        public static final int slide_right=0x7f040006;
     }
     public static final class array {
         public static final int conversation_actions=0x7f060000;
@@ -58,9 +60,9 @@ public final class R {
         public static final int menu_settings=0x7f0a0021;
         public static final int recipient_input=0x7f0a0014;
         public static final int right_item_background=0x7f0a0013;
-        public static final int sms_item_body=0x7f0a0010;
-        public static final int sms_item_date=0x7f0a0011;
-        public static final int sms_item_status=0x7f0a000f;
+        public static final int sms_item_body=0x7f0a000f;
+        public static final int sms_item_date=0x7f0a0010;
+        public static final int sms_item_status=0x7f0a0011;
         public static final int sms_thread_progress=0x7f0a001d;
         public static final int sms_thread_progress_bar=0x7f0a001c;
         public static final int sms_thread_send_bar=0x7f0a0015;

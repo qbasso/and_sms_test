@@ -4,6 +4,7 @@
 package pl.qbasso.models;
 
 import android.os.Bundle;
+import android.view.View;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -25,6 +26,8 @@ public class ActionModel {
 	/** The action data. */
 	private Bundle actionData;
 
+	private View view;
+
 	/**
 	 * Instantiates a new action model.
 	 *
@@ -32,12 +35,14 @@ public class ActionModel {
 	 * @param resId the res id
 	 * @param actionId the action id
 	 * @param b the b
+	 * @param view 
 	 */
-	public ActionModel(String title, int resId, int actionId, Bundle b) {
+	public ActionModel(String title, int resId, int actionId, Bundle b, View view) {
 		this.title = title;
 		this.resId = resId;
 		this.actionId = actionId;
 		this.actionData = b;
+		this.view = view;
 	}
 
 	public String getTitle() {
@@ -70,6 +75,14 @@ public class ActionModel {
 
 	public void setActionData(Bundle actionData) {
 		this.actionData = actionData;
+	}
+
+	public View getView() {
+		return view;
+	}
+
+	public void setView(View view) {
+		this.view = view;
 	}
 
 }

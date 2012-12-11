@@ -69,7 +69,7 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 		protected LinearLayout background;
 
 		/** The msg body. */
-		protected TextView msgBody;
+		protected LinkEnabledTextView msgBody;
 
 		/** The msg date. */
 		protected TextView msgDate;
@@ -128,6 +128,7 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 			}
 			leftHolder.msgBody.setText(item.getBody());
 			leftHolder.msgBody.setAutoLinkMask(Linkify.ALL);
+			leftHolder.msgBody.setMovementMethod(null);
 			leftHolder.msgDate.setText(Utils.formatDate(item.getDate()));
 			if (item.getStatus() == SmsModel.STATUS_WAITING) {
 				leftHolder.msgStatus.setImageResource(R.drawable.ic_launcher);
@@ -150,7 +151,8 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 			}
 			rightHolder.msgBody.setText(Html.fromHtml(getContext().getString(
 					R.string.message_body, displayName, item.getBody())));
-			rightHolder.msgBody.setAutoLinkMask(Linkify.PHONE_NUMBERS);
+			rightHolder.msgBody.setAutoLinkMask(Linkify.ALL);
+			rightHolder.msgBody.setMovementMethod(null);
 			rightHolder.msgDate.setText(Utils.formatDate(item.getDate()));
 			if (item.getStatus() == SmsModel.STATUS_WAITING) {
 				rightHolder.msgStatus.setImageResource(R.drawable.ic_launcher);
@@ -174,7 +176,7 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 	 */
 	private void initializeLeftHolder(View view) {
 		leftHolder = new LeftItemHolder();
-		leftHolder.msgBody = (TextView) view.findViewById(R.id.sms_item_body);
+		leftHolder.msgBody = (LinkEnabledTextView) view.findViewById(R.id.sms_item_body);
 		leftHolder.msgDate = (TextView) view.findViewById(R.id.sms_item_date);
 		leftHolder.background = (LinearLayout) view
 				.findViewById(R.id.left_item_background);
@@ -190,7 +192,8 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 	 */
 	private void initializeRightHolder(View view) {
 		rightHolder = new RightItemHolder();
-		rightHolder.msgBody = (TextView) view.findViewById(R.id.sms_item_body);
+		rightHolder.msgBody = (LinkEnabledTextView) view.findViewById(R.id.sms_item_body);
+		
 		rightHolder.msgDate = (TextView) view.findViewById(R.id.sms_item_date);
 		rightHolder.background = (LinearLayout) view
 				.findViewById(R.id.right_item_background);

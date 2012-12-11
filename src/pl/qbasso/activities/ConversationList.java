@@ -10,7 +10,6 @@ import pl.qbasso.custom.SendTaskService;
 import pl.qbasso.custom.SlideHelper;
 import pl.qbasso.custom.Utils;
 import pl.qbasso.interfaces.SlidingViewLoadedListener;
-import pl.qbasso.loaders.ConversationLoader;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.Cache;
@@ -22,6 +21,7 @@ import pl.qbasso.smssender.R;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.AlertDialog;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
@@ -40,9 +40,6 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Intents.Insert;
-import android.support.v4.app.FragmentActivity;
-import android.support.v4.app.LoaderManager.LoaderCallbacks;
-import android.support.v4.content.Loader;
 import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.View;
@@ -57,13 +54,16 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 /**
  * The Class ConversationList.
  * 
  * @author jakub.porzuczek
  */
-public class ConversationList extends Activity { //implements LoaderCallbacks<List<ConversationModel>> {
+public class ConversationList extends Activity { // implements
+													// LoaderCallbacks<List<ConversationModel>>
+													// {
 
 	/**
 	 * The Constant EXTRA_CLIENT_ID. Used when passing intent extra client id to
@@ -119,7 +119,9 @@ public class ConversationList extends Activity { //implements LoaderCallbacks<Li
 	private String clientId;
 
 	/** The conversation adapter. */
-	private ConversationAdapter conversationAdapter;
+	private ConversationAdapter mConversationAdapter;
+
+	private NotificationManager mNotificationManager;
 
 	/** The item long click listener. */
 	private OnItemLongClickListener itemLongClckListener = new OnItemLongClickListener() {
@@ -174,12 +176,12 @@ public class ConversationList extends Activity { //implements LoaderCallbacks<Li
 	private void actionDeleteThread(View v, final ConversationModel item) {
 		smsAccessor.deleteThread(item.getThreadId());
 		Animation anim = AnimationUtils.loadAnimation(ctx,
-				R.anim.collapse_from_bottom);
+				R.anim.slide_right);
 		v.startAnimation(anim);
 		mainHandler.postDelayed(new Runnable() {
 			public void run() {
 				items.remove(item);
-				conversationAdapter.notifyDataSetChanged();
+				mConversationAdapter.notifyDataSetChanged();
 			}
 		}, anim.getDuration());
 	}
@@ -253,9 +255,9 @@ public class ConversationList extends Activity { //implements LoaderCallbacks<Li
 			updateReceiver = new BroadcastReceiver() {
 				@Override
 				public void onReceive(Context context, Intent intent) {
-					if (intent.getAction().equals(SmsSendHelper.ACTION_UPDATE)) {
+						if (intent.getAction().equals(SmsSendHelper.ACTION_UPDATE)) {
 						SmsModel m = (SmsModel) intent
-								.getSerializableExtra(SmsSendHelper.EXTRA_MESSAGE);						
+								.getSerializableExtra(SmsSendHelper.EXTRA_MESSAGE);
 						updateItems(true);
 						if (slideHelper.isMenuShown()) {
 							slideHelper.hideMenu(false);
@@ -271,12 +273,21 @@ public class ConversationList extends Activity { //implements LoaderCallbacks<Li
 							i.putExtra("threadList", list.toArray());
 							startActivity(i);
 						}
+					} else if (intent.getAction().equals(
+							SmsReceiver.ACTION_MESSAGE_ARRIVED)) {
+						if (slideHelper.isMenuShown()) {
+							slideHelper.hideMenu(false);
+						}
+						mNotificationManager.cancel("",
+								SmsReceiver.NOTIFICATION_ID);
+						updateItems(true);
 					}
 				}
 			};
 		}
-		this.registerReceiver(updateReceiver, new IntentFilter(
-				SmsSendHelper.ACTION_UPDATE));
+		IntentFilter filter = new IntentFilter(SmsSendHelper.ACTION_UPDATE);
+		filter.addAction(SmsReceiver.ACTION_MESSAGE_ARRIVED);
+		this.registerReceiver(updateReceiver, filter);
 	}
 
 	/** The listener. */
@@ -315,10 +326,10 @@ public class ConversationList extends Activity { //implements LoaderCallbacks<Li
 	private Handler mainHandler = new Handler() {
 		@Override
 		public void handleMessage(Message m) {
-			conversationAdapter = new ConversationAdapter(ctx,
+			mConversationAdapter = new ConversationAdapter(ctx,
 					R.layout.conversation_item, items);
 			smsThreadList.setOnItemClickListener(smsThreadClickListener);
-			smsThreadList.setAdapter(conversationAdapter);
+			smsThreadList.setAdapter(mConversationAdapter);
 			pd.dismiss();
 		}
 	};
@@ -376,13 +387,14 @@ public class ConversationList extends Activity { //implements LoaderCallbacks<Li
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.conversation_list);
+		mNotificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
 		if (getIntent().getBooleanExtra(EXTRA_CANCEL_ALARM, false)) {
 			((AlarmManager) getSystemService(ALARM_SERVICE))
 					.cancel(PendingIntent.getBroadcast(this, 0, new Intent(
 							SmsReceiver.ACTION_CANCEL_LIGHT), 0));
 		}
 		initViewMembers();
-//		getSupportLoaderManager().initLoader(0, null, this).forceLoad();
+		// getSupportLoaderManager().initLoader(0, null, this).forceLoad();
 		showProgressDialog();
 		updateItems(false);
 	}
@@ -525,18 +537,21 @@ public class ConversationList extends Activity { //implements LoaderCallbacks<Li
 			}
 			Intent i = new Intent(ctx, SmsConversationActivity.class);
 			ConversationModel conversationModel = new ConversationModel(
-					threadId, 0, "");
+					threadId, 1, "");
 			conversationModel.setAddress(m.getAddress());
 			conversationModel
 					.setDisplayName(smsAccessor.getDisplayName(sender));
-			ArrayList<ConversationModel> items = new ArrayList<ConversationModel>();
-			items.add(conversationModel);
+			ArrayList<ConversationModel> items = new ArrayList<ConversationModel>(this.items);
+			items.add(0, conversationModel);
 			i.putExtra("threadList", items.toArray());
 			i.putExtra("threadNumber", 0);
 			i.putExtra("send_now", true);
 			overridePendingTransition(android.R.anim.slide_out_right,
 					android.R.anim.slide_in_left);
 			startActivity(i);
+		} else {
+			Toast.makeText(ctx, "Podaj poprawny numer telefonu!",
+					Toast.LENGTH_SHORT).show();
 		}
 	}
 
@@ -569,19 +584,20 @@ public class ConversationList extends Activity { //implements LoaderCallbacks<Li
 		}
 	}
 
-//	public Loader<List<ConversationModel>> onCreateLoader(int arg0, Bundle arg1) {
-//		return new ConversationLoader(ctx);
-//	}
-//
-//	public void onLoadFinished(Loader<List<ConversationModel>> arg0,
-//			List<ConversationModel> arg1) {
-//		items = arg1;
-//		mainHandler.sendEmptyMessage(0);
-//	}
-//
-//	public void onLoaderReset(Loader<List<ConversationModel>> arg0) {
-//		items = new ArrayList<ConversationModel>();
-//		mainHandler.sendEmptyMessage(0);
-//	}
+	// public Loader<List<ConversationModel>> onCreateLoader(int arg0, Bundle
+	// arg1) {
+	// return new ConversationLoader(ctx);
+	// }
+	//
+	// public void onLoadFinished(Loader<List<ConversationModel>> arg0,
+	// List<ConversationModel> arg1) {
+	// items = arg1;
+	// mainHandler.sendEmptyMessage(0);
+	// }
+	//
+	// public void onLoaderReset(Loader<List<ConversationModel>> arg0) {
+	// items = new ArrayList<ConversationModel>();
+	// mainHandler.sendEmptyMessage(0);
+	// }
 
 }

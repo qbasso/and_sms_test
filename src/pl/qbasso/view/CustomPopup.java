@@ -126,7 +126,7 @@ public class CustomPopup {
 	 *
 	 * @param a the a
 	 */
-	public void addAction(ActionModel a) {
+	public void addAction(final ActionModel a) {
 		final int actionId = a.getActionId();
 		final Bundle b = a.getActionData();
 		mActionList.add(a);
@@ -141,7 +141,7 @@ public class CustomPopup {
 		v.setFocusable(true);
 		v.setOnClickListener(new OnClickListener() {
 			public void onClick(View arg0) {
-				mActionClickListener.onItemClick(actionId, b);
+				mActionClickListener.onItemClick(a.getView(), actionId, b);
 				mWindow.dismiss();
 			}
 		});

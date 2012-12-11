@@ -92,9 +92,7 @@ public class SmsReceiver extends BroadcastReceiver {
 					}
 				}
 				notify(ctx, model);
-				Intent messageArrived = new Intent(ACTION_MESSAGE_ARRIVED);
-				messageArrived.putExtra(SmsSendHelper.EXTRA_MESSAGE, model);
-				ctx.sendBroadcast(messageArrived);
+				
 			}
 			this.abortBroadcast();
 		} else if (i.getAction().equals(ACTION_CANCEL_LIGHT)) {
@@ -127,6 +125,9 @@ public class SmsReceiver extends BroadcastReceiver {
 	private void notify(Context ctx, SmsModel model) {
 		long threadId;
 		Uri u = smsDb.insertSms(SmsDbHelper.SMS_URI, model);
+		if (u!=null) {
+			model.setId(Long.valueOf(u.getLastPathSegment()));
+		}
 		if (model.getThreadId() == -1) {
 			threadId = smsDb.getThreadIdForSmsUri(u);
 			model.setThreadId(threadId);
@@ -135,11 +136,14 @@ public class SmsReceiver extends BroadcastReceiver {
 				model.getAddress(), model.getThreadId(),
 				model.getAddressDisplayName(), true);
 		nm.notify("", NOTIFICATION_ID, n);
-		Intent intent = new Intent(ACTION_UPDATE);
 		Cache.delete(model.getThreadId());
 		Cache.addToRefreshSet(model.getThreadId());
-		intent.putExtra(EXTRA_THREAD_ID, model.getThreadId());
-		ctx.sendBroadcast(intent);
+		//TODO here when I used Intent with ACTION_UPDATE (same as in CustomReceiver class) everytime broadcast was received by SmsConversationActivity
+		//extras was empty. When action was changed to MESSAGE_ARRIVED everything is passed via Intent. Weird case, check.
+		Intent messageArrived = new Intent(ACTION_MESSAGE_ARRIVED);
+		messageArrived.putExtra(EXTRA_THREAD_ID, model.getThreadId());
+		messageArrived.putExtra(SmsSendHelper.EXTRA_MESSAGE, model);
+		ctx.sendBroadcast(messageArrived);
 	}
 
 	/**
@@ -204,7 +208,7 @@ public class SmsReceiver extends BroadcastReceiver {
 			AlarmManager am = (AlarmManager) ctx
 					.getSystemService(Activity.ALARM_SERVICE);
 			am.set(AlarmManager.RTC,
-					System.currentTimeMillis() + 1000 * 2 * 60,
+					System.currentTimeMillis() + 1000 * 3 * 60,
 					cancelLightIntent);
 			n.flags |= Notification.FLAG_SHOW_LIGHTS;
 			n.ledARGB = 0x004800ff;
