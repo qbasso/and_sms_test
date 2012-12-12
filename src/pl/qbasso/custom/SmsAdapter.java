@@ -11,13 +11,11 @@ import pl.qbasso.smssender.R;
 import android.content.Context;
 import android.text.Html;
 import android.text.util.Linkify;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AnimationUtils;
 import android.widget.ArrayAdapter;
-import android.widget.ImageSwitcher;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -126,8 +124,9 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 			} else {
 				leftHolder = (LeftItemHolder) view.getTag();
 			}
-			leftHolder.msgBody.setText(item.getBody());
 			leftHolder.msgBody.setAutoLinkMask(Linkify.ALL);
+			leftHolder.msgBody.setText(item.getBody());
+			//this enables custom handing of touch events in @LinkEnabledTextView
 			leftHolder.msgBody.setMovementMethod(null);
 			leftHolder.msgDate.setText(Utils.formatDate(item.getDate()));
 			if (item.getStatus() == SmsModel.STATUS_WAITING) {
@@ -149,9 +148,9 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 			} else {
 				rightHolder = (RightItemHolder) v.getTag();
 			}
+			rightHolder.msgBody.setAutoLinkMask(Linkify.ALL);
 			rightHolder.msgBody.setText(Html.fromHtml(getContext().getString(
 					R.string.message_body, displayName, item.getBody())));
-			rightHolder.msgBody.setAutoLinkMask(Linkify.ALL);
 			rightHolder.msgBody.setMovementMethod(null);
 			rightHolder.msgDate.setText(Utils.formatDate(item.getDate()));
 			if (item.getStatus() == SmsModel.STATUS_WAITING) {
@@ -176,7 +175,8 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 	 */
 	private void initializeLeftHolder(View view) {
 		leftHolder = new LeftItemHolder();
-		leftHolder.msgBody = (LinkEnabledTextView) view.findViewById(R.id.sms_item_body);
+		leftHolder.msgBody = (LinkEnabledTextView) view
+				.findViewById(R.id.sms_item_body);
 		leftHolder.msgDate = (TextView) view.findViewById(R.id.sms_item_date);
 		leftHolder.background = (LinearLayout) view
 				.findViewById(R.id.left_item_background);
@@ -192,8 +192,9 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 	 */
 	private void initializeRightHolder(View view) {
 		rightHolder = new RightItemHolder();
-		rightHolder.msgBody = (LinkEnabledTextView) view.findViewById(R.id.sms_item_body);
-		
+		rightHolder.msgBody = (LinkEnabledTextView) view
+				.findViewById(R.id.sms_item_body);
+
 		rightHolder.msgDate = (TextView) view.findViewById(R.id.sms_item_date);
 		rightHolder.background = (LinearLayout) view
 				.findViewById(R.id.right_item_background);
@@ -208,7 +209,7 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 	 */
 	@Override
 	public int getItemViewType(int position) {
-//		Log.i("SmsAdapter", String.format("View position: %d", position));
+		// Log.i("SmsAdapter", String.format("View position: %d", position));
 		int type = items.get(position).getSmsType();
 		return type == SmsModel.MESSAGE_TYPE_SENT
 				|| type == SmsModel.MESSAGE_TYPE_QUEUED

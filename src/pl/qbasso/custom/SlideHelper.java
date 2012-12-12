@@ -69,7 +69,7 @@ public class SlideHelper {
 	private boolean statusBarVisible = false;
 	private int currentContentMargin;
 
-	private static final int ANIMATION_DURATION = 700;
+	private static final int ANIMATION_DURATION = 500;
 	private static int screenSizePx;
 
 	private static final int GESTURE_THRESHOLD = 5;
@@ -331,7 +331,11 @@ public class SlideHelper {
 	public void hideAfterDrag() {
 		TranslateAnimation ta = new TranslateAnimation(currentContentMargin, 0,
 				0, 0);
-		ta.setDuration((int) (((float) currentContentMargin / (float) screenSizePx) * ANIMATION_DURATION));
+		int animationDuration = (int) (((float) currentContentMargin / (float) screenSizePx) * ANIMATION_DURATION);
+		if (animationDuration<0) {
+			animationDuration = 100;
+		}
+		ta.setDuration(animationDuration);
 		content.startAnimation(ta);
 		RelativeLayout.LayoutParams params = (android.widget.RelativeLayout.LayoutParams) content
 				.getLayoutParams();

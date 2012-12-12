@@ -211,13 +211,11 @@ public class SmsConversationActivity extends FragmentActivity implements
 			}
 			Toast.makeText(ctx, "Dodano do wersji roboczych",
 					Toast.LENGTH_SHORT).show();
-			Cache.delete(cm.getThreadId());
-			Cache.addToRefreshSet(cm.getThreadId());
+			Cache.addToRefreshSet(cm.getThreadId(), true);
 		} else {
 			if (msgId > -1) {
 				helper.deleteSms(SmsDbHelper.SMS_URI, msgId);
-				Cache.delete(cm.getThreadId());
-				Cache.addToRefreshSet(cm.getThreadId());
+				Cache.addToRefreshSet(cm.getThreadId(), false);
 			}
 		}
 		unregisterReceiver(receiver);
@@ -232,9 +230,8 @@ public class SmsConversationActivity extends FragmentActivity implements
 	public void onItemSeen(int adapterId, long messageId) {
 		if (viewPager.getCurrentItem() == adapterId) {
 			helper.updateSmsRead(messageId, SmsModel.MESSAGE_READ);
-			Cache.delete(listInfo[viewPager.getCurrentItem()].getThreadId());
 			Cache.addToRefreshSet(listInfo[viewPager.getCurrentItem()]
-					.getThreadId());
+					.getThreadId(), false);
 		}
 	}
 

@@ -10,6 +10,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Handler;
+import android.util.Log;
 
 /**
  * The Class CustomReceivers.
@@ -21,6 +22,7 @@ public class CustomReceivers {
 	 */
 	public static class SmsSentReceiver extends BroadcastReceiver {
 
+		private static final String TAG = "SmsSentReceiver";
 		/** The m handler. */
 		private Handler mHandler = new Handler();
 
@@ -55,6 +57,11 @@ public class CustomReceivers {
 					.getSerializableExtra(SmsSendHelper.EXTRA_MESSAGE);
 			final SmsModel data = m;
 			h.sendText(arg0, data, false);
+			Log.i(TAG, String.format(
+					"Attept to resend message %s:%s",
+					m.getAddressDisplayName() != null ? m
+							.getAddressDisplayName() : m.getAddress(), m
+							.getBody()));
 		}
 
 		/**
@@ -89,16 +96,21 @@ public class CustomReceivers {
 			SmsDbHelper smsAccessor = new SmsDbHelper(arg0.getContentResolver());
 			m = (SmsModel) intent
 					.getSerializableExtra(SmsSendHelper.EXTRA_MESSAGE);
-//			Intent updateIntent = new Intent(SmsSendHelper.ACTION_UPDATE);
+			// Intent updateIntent = new Intent(SmsSendHelper.ACTION_UPDATE);
 			m.setSmsType(SmsModel.MESSAGE_TYPE_FAILED);
 			smsAccessor.updateSmsStatus(
 					Uri.withAppendedPath(SmsDbHelper.SMS_URI,
 							String.valueOf(m.getId())), SmsModel.STATUS_NONE,
 					SmsModel.MESSAGE_TYPE_FAILED);
-			//TODO probably update intent needed here as well
+			// TODO probably update intent needed here as well
 			// final Uri u = smsAccessor.insertSms(SmsDbHelper.SMS_URI, m);
 			// m.setId(Long.parseLong(u.getPath()));
 			// if (m.getId() == 0) {
+			Log.i(TAG, String.format(
+					"Send failed for message %s:%s",
+					m.getAddressDisplayName() != null ? m
+							.getAddressDisplayName() : m.getAddress(), m
+							.getBody()));
 			final SmsModel data = m;
 			mHandler.postDelayed(new Runnable() {
 				public void run() {
@@ -146,8 +158,12 @@ public class CustomReceivers {
 								String.valueOf(m.getId())),
 						SmsModel.STATUS_NONE, SmsModel.MESSAGE_TYPE_SENT);
 			}
-			Cache.delete(m.getThreadId());
-			Cache.addToRefreshSet(m.getThreadId());
+			Log.i(TAG, String.format(
+					"Send complete for message %s:%s",
+					m.getAddressDisplayName() != null ? m
+							.getAddressDisplayName() : m.getAddress(), m
+							.getBody()));
+			Cache.addToRefreshSet(m.getThreadId(), true);
 			updateIntent.putExtra(SmsSendHelper.EXTRA_MESSAGE, m);
 			updateIntent.putExtra(SmsSendHelper.EXTRA_LAUNCH_CONVERSATION,
 					intent.getBooleanExtra(

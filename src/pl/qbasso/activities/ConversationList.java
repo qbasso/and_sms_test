@@ -161,7 +161,7 @@ public class ConversationList extends Activity { // implements
 		Intent insert = new Intent(Intent.ACTION_INSERT_OR_EDIT);
 		insert.setType(Contacts.CONTENT_ITEM_TYPE);
 		insert.putExtra(Insert.PHONE, item.getAddress());
-		Cache.addToRefreshSet(item.getThreadId());
+		Cache.addToRefreshSet(item.getThreadId(), false);
 		startActivityForResult(insert, 0);
 	}
 
@@ -368,7 +368,8 @@ public class ConversationList extends Activity { // implements
 					Cache.putAll(smsAccessor.getThreads(null));
 					items = Cache.getAll();
 				} else {
-					Cache.putAllAtBeginnig(smsAccessor.getThreads(Cache
+					
+					Cache.putInOrder(smsAccessor.getThreads(Cache
 							.getRefreshList()));
 					Cache.clearRefreshSet();
 					items = Cache.getAll();

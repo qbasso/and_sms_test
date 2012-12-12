@@ -15,7 +15,6 @@ import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.Cache;
 import pl.qbasso.sms.SmsDbHelper;
-import pl.qbasso.sms.SmsReceiver;
 import pl.qbasso.sms.SmsSendHelper;
 import pl.qbasso.smssender.R;
 import pl.qbasso.view.CustomPopup;
@@ -35,7 +34,6 @@ import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
 import android.support.v4.app.Fragment;
-import android.text.util.Linkify;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -135,12 +133,10 @@ public class SmsConversation extends Fragment {
 				SmsModel smsModel = (SmsModel) m.getData().getSerializable(
 						SmsSendHelper.EXTRA_MESSAGE);
 				int pos = m.getData().getInt(EXTRA_ADAPTER_POSITION);
-				
 				items.remove(pos);
 				items.add(smsModel);
 				updateItems(false);
-				Cache.delete(info.getThreadId());
-				Cache.addToRefreshSet(info.getThreadId());
+				Cache.addToRefreshSet(info.getThreadId(), true);
 				break;
 			case SendTaskService.CANCEL_MESSAGE:
 				updateItems(true);
@@ -166,7 +162,7 @@ public class SmsConversation extends Fragment {
 				SmsModel m = new SmsModel(0, info.getThreadId(), info
 						.getAddress(), "", System.currentTimeMillis(),
 						messageBody, SmsModel.MESSAGE_TYPE_QUEUED,
-						SmsModel.MESSAGE_NOT_READ, SmsModel.STATUS_WAITING);
+						SmsModel.MESSAGE_READ, SmsModel.STATUS_WAITING);
 				Uri u = smsAccessor.insertSms(SmsDbHelper.SMS_URI, m);
 				m.setAddressDisplayName(info.getDisplayName());
 				m.setId(Long.parseLong(u.getLastPathSegment()));
@@ -202,8 +198,7 @@ public class SmsConversation extends Fragment {
 				smsThreadHandler.postDelayed(new Runnable() {
 					public void run() {
 						items.remove(b.getInt(EXTRA_ADAPTER_POSITION));
-						Cache.delete(info.getThreadId());
-						Cache.addToRefreshSet(info.getThreadId());
+						Cache.addToRefreshSet(info.getThreadId(), false);
 						if (items.size() == 0) {
 							draftAvailableListener.draftTextAvailable("", position);
 							act.finish();
@@ -216,7 +211,7 @@ public class SmsConversation extends Fragment {
 			case ACTION_DELETE_THREAD:
 				smsAccessor.deleteThread(b.getLong(EXTRA_THREAD_ID));
 				Cache.delete(info.getThreadId());
-				Cache.addToRefreshSet(info.getThreadId());
+				Cache.addToRefreshSet(info.getThreadId(), true);
 				draftAvailableListener.draftTextAvailable("", position);
 				act.finish();
 				break;
@@ -278,8 +273,7 @@ public class SmsConversation extends Fragment {
 			if (success) {
 				items.add(0, sendingNow);
 				adapter.notifyDataSetChanged();
-				Cache.delete(info.getThreadId());
-				Cache.addToRefreshSet(info.getThreadId());
+				Cache.addToRefreshSet(info.getThreadId(), true);
 			}
 		}
 	};
@@ -320,6 +314,7 @@ public class SmsConversation extends Fragment {
 
 	public void updateItem(SmsModel m) {
 		items.add(m);
+		Cache.addToRefreshSet(m.getThreadId(), true);
 		Log.i("SmsConversation",
 				String.format("Items after update: %d", items.size()));
 		adapter.notifyDataSetChanged();

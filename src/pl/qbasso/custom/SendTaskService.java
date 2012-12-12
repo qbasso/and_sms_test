@@ -4,6 +4,7 @@
 package pl.qbasso.custom;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 
@@ -159,6 +160,11 @@ public class SendTaskService extends Service {
 			}
 			mMessageQueue.remove(smsModel.getId());
 			mSendHelper.sendText(mContext, smsModel, false);
+			Log.i(TAG, String.format(
+					"Message %s:%s sent. Queued messages: %d",
+					smsModel.getAddressDisplayName() != null ? smsModel
+							.getAddressDisplayName() : smsModel.getAddress(),
+					smsModel.getBody(), mMessageQueue.size()));
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
@@ -174,6 +180,11 @@ public class SendTaskService extends Service {
 		if (mMessageQueue.containsKey(smsModel.getId())) {
 			mMessageQueue.get(smsModel.getId()).cancel();
 			mMessageQueue.remove(smsModel.getId());
+			Log.i(TAG, String.format(
+					"Message %s:%s canceled. Queued messages: %d",
+					smsModel.getAddressDisplayName() != null ? smsModel
+							.getAddressDisplayName() : smsModel.getAddress(),
+					smsModel.getBody(), mMessageQueue.size()));
 			data.putSerializable(SmsSendHelper.EXTRA_MESSAGE, smsModel);
 			data.putInt(EXTRA_POSITION, b.getInt(EXTRA_POSITION));
 			try {
@@ -214,6 +225,11 @@ public class SendTaskService extends Service {
 			}
 		};
 		mMessageQueue.put(message.getId(), timer);
+		Log.i(TAG, String.format(
+				"Message %s:%s queued. Queued messages: %d",
+				message.getAddressDisplayName() != null ? message
+						.getAddressDisplayName() : message.getAddress(),
+						message.getBody(), mMessageQueue.size()));
 		timer.start();
 	}
 
@@ -272,15 +288,20 @@ public class SendTaskService extends Service {
 		mDbHelper = new SmsDbHelper(getContentResolver());
 		mSendHelper = new SmsSendHelper();
 		List<SmsModel> l = mDbHelper.getMessagesNotSent();
-		for (SmsModel smsModel : l) {
+		Iterator<SmsModel> it = l.iterator();
+		while (it.hasNext()) {
+			SmsModel smsModel = it.next();
 			Matcher m = Patterns.PHONE.matcher(smsModel.getAddress());
-			if (m.find() && m.end()-m.start() == smsModel.getAddress().length()) {
+			if (m.find()
+					&& m.end() - m.start() == smsModel.getAddress().length()) {
 				smsModel.setDate(System.currentTimeMillis());
 				addToQueue(smsModel, 0, "");
 			} else {
 				mDbHelper.deleteSms(SmsDbHelper.SMS_URI, smsModel.getId());
+				l.remove(smsModel);
 			}
 		}
+		Log.i(TAG, String.format("Loaded %d messages to send", l.size()));
 	}
 
 }

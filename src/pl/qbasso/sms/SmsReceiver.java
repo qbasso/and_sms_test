@@ -22,6 +22,7 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.telephony.SmsMessage;
+import android.util.Log;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -45,6 +46,7 @@ public class SmsReceiver extends BroadcastReceiver {
 	private static SmsDbHelper smsDb;
 	public static final int NOTIFICATION_ID = 1;
 	public static final String EXTRA_CANCEL_ALARM = "cancel_alarm";
+	private static final String TAG = "SmsReceiver";
 
 	/*
 	 * (non-Javadoc)
@@ -91,8 +93,8 @@ public class SmsReceiver extends BroadcastReceiver {
 						model.setBody(model.getBody() + msg.getMessageBody());
 					}
 				}
+				Cache.addToRefreshSet(model.getThreadId(), true);
 				notify(ctx, model);
-				
 			}
 			this.abortBroadcast();
 		} else if (i.getAction().equals(ACTION_CANCEL_LIGHT)) {
@@ -101,6 +103,10 @@ public class SmsReceiver extends BroadcastReceiver {
 					i.getStringExtra(EXTRA_SENDER_ADDRESS),
 					i.getLongExtra(EXTRA_THREAD_ID, 0),
 					i.getStringExtra(EXTRA_SENDER_DISPLAY_NAME), false);
+			Log.i(TAG, String.format(
+					"Cancel LED broadcast for %s:%s. New notification shown",
+					i.getStringExtra(EXTRA_SENDER_ADDRESS),
+					i.getStringExtra(EXTRA_MESSAGE_BODY)));
 			nm.notify("", NOTIFICATION_ID,
 					n);
 		}
@@ -136,13 +142,16 @@ public class SmsReceiver extends BroadcastReceiver {
 				model.getAddress(), model.getThreadId(),
 				model.getAddressDisplayName(), true);
 		nm.notify("", NOTIFICATION_ID, n);
-		Cache.delete(model.getThreadId());
-		Cache.addToRefreshSet(model.getThreadId());
 		//TODO here when I used Intent with ACTION_UPDATE (same as in CustomReceiver class) everytime broadcast was received by SmsConversationActivity
 		//extras was empty. When action was changed to MESSAGE_ARRIVED everything is passed via Intent. Weird case, check.
 		Intent messageArrived = new Intent(ACTION_MESSAGE_ARRIVED);
 		messageArrived.putExtra(EXTRA_THREAD_ID, model.getThreadId());
 		messageArrived.putExtra(SmsSendHelper.EXTRA_MESSAGE, model);
+		Log.i(TAG, String.format(
+				"Notification for %s:%s shown",
+				model.getAddressDisplayName() != null ? model
+						.getAddressDisplayName() : model.getAddress(),
+				model.getBody()));
 		ctx.sendBroadcast(messageArrived);
 	}
 

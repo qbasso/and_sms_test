@@ -28,15 +28,10 @@ public class LinkEnabledTextView extends TextView {
 		Object obj = getText();
 		if (obj instanceof Spannable) {
 			Spannable s = (Spannable) obj;
-
 	        int x = (int) event.getX();
             int y = (int) event.getY();
-
             x -= getTotalPaddingLeft();
             y -= getTotalPaddingTop();
-
-            x += getScrollX();
-            y += getScrollY();
 
             Layout layout = getLayout();
             int line = layout.getLineForVertical(y);
