@@ -207,14 +207,14 @@ public class SmsConversationActivity extends FragmentActivity implements
 						"", System.currentTimeMillis(), smsInput.getText()
 								.toString(), SmsModel.MESSAGE_TYPE_DRAFT,
 						SmsModel.MESSAGE_NOT_READ, SmsModel.STATUS_NONE);
-				helper.insertSms(SmsDbHelper.SMS_DRAFT_URI, m);
+				helper.insertSms(m);
 			}
 			Toast.makeText(ctx, "Dodano do wersji roboczych",
 					Toast.LENGTH_SHORT).show();
 			Cache.addToRefreshSet(cm.getThreadId(), true);
 		} else {
 			if (msgId > -1) {
-				helper.deleteSms(SmsDbHelper.SMS_URI, msgId);
+				helper.deleteSms(msgId);
 				Cache.addToRefreshSet(cm.getThreadId(), false);
 			}
 		}

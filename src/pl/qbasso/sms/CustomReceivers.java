@@ -150,7 +150,7 @@ public class CustomReceivers {
 			m.setSmsType(SmsModel.MESSAGE_TYPE_SENT);
 			m.setStatus(SmsModel.STATUS_NONE);
 			if (m.getId() == 0) {
-				Uri u = smsAccessor.insertSms(SmsDbHelper.SMS_URI, m);
+				Uri u = smsAccessor.insertSms(m);
 				m = smsAccessor.getSingleSms(u);
 			} else {
 				smsAccessor.updateSmsStatus(

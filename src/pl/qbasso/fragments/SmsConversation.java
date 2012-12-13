@@ -163,7 +163,7 @@ public class SmsConversation extends Fragment {
 						.getAddress(), "", System.currentTimeMillis(),
 						messageBody, SmsModel.MESSAGE_TYPE_QUEUED,
 						SmsModel.MESSAGE_READ, SmsModel.STATUS_WAITING);
-				Uri u = smsAccessor.insertSms(SmsDbHelper.SMS_URI, m);
+				Uri u = smsAccessor.insertSms(m);
 				m.setAddressDisplayName(info.getDisplayName());
 				m.setId(Long.parseLong(u.getLastPathSegment()));
 				sendingNow = m;
@@ -191,20 +191,21 @@ public class SmsConversation extends Fragment {
 		public void onItemClick(View v, int pos, final Bundle b) {
 			switch (pos) {
 			case ACTION_DELETE_MESSAGE:
-				smsAccessor.deleteSms(SmsDbHelper.SMS_URI,
-						b.getLong(EXTRA_MESSAGE_ID));
-				Animation anim = AnimationUtils.loadAnimation(act, R.anim.slide_right);
+				smsAccessor.deleteSms(b.getLong(EXTRA_MESSAGE_ID));
+				Animation anim = AnimationUtils.loadAnimation(act,
+						R.anim.slide_right);
 				v.startAnimation(anim);
 				smsThreadHandler.postDelayed(new Runnable() {
 					public void run() {
 						items.remove(b.getInt(EXTRA_ADAPTER_POSITION));
 						Cache.addToRefreshSet(info.getThreadId(), false);
 						if (items.size() == 0) {
-							draftAvailableListener.draftTextAvailable("", position);
+							draftAvailableListener.draftTextAvailable("",
+									position);
 							act.finish();
 						}
 						adapter.notifyDataSetChanged();
-						
+
 					}
 				}, anim.getDuration());
 				break;
@@ -318,7 +319,7 @@ public class SmsConversation extends Fragment {
 		Log.i("SmsConversation",
 				String.format("Items after update: %d", items.size()));
 		adapter.notifyDataSetChanged();
-		smsList.setSelection(smsList.getCount()-1);
+		smsList.setSelection(smsList.getCount() - 1);
 	}
 
 	@Override

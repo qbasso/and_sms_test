@@ -71,7 +71,7 @@ public class SendSms extends Activity {
 		super.onCreate(savedInstanceState);
 		Uri u = getIntent().getData();
 		ctx = this;
-		smsAccessor = ((BaseApplication)getApplication()).getSmsDatabase();
+		smsAccessor = new SmsDbHelper(getContentResolver());
 		setContentView(R.layout.send_sms_screen);
 		contactInput = (AutoCompleteTextView) findViewById(R.id.recipient_input);
 		contactsAdapter = new ContactsAdapter(ctx, R.layout.contact_item);

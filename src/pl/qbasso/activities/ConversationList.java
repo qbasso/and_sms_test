@@ -16,6 +16,7 @@ import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.Cache;
 import pl.qbasso.sms.CustomSmsDbHelper;
+import pl.qbasso.sms.SmsDbHelper;
 import pl.qbasso.sms.SmsLengthWatcher;
 import pl.qbasso.sms.SmsReceiver;
 import pl.qbasso.sms.SmsSendHelper;
@@ -413,7 +414,7 @@ public class ConversationList extends Activity { // implements
 		smsThreadList = (ListView) findViewById(R.id.main_thread_list);
 		smsThreadList.setOnItemClickListener(smsThreadClickListener);
 		smsThreadList.setOnItemLongClickListener(itemLongClckListener);
-		smsAccessor = ((BaseApplication)getApplication()).getSmsDatabase();
+		smsAccessor = new SmsDbHelper(getContentResolver());
 		composeButton = (Button) findViewById(R.id.button_compose_new);
 		composeButton.setOnClickListener(composeButtonListener);
 		pd = new ProgressDialog(ctx);

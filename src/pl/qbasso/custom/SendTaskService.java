@@ -190,7 +190,7 @@ public class SendTaskService extends Service {
 			try {
 				toSend = Message.obtain(null, CANCEL_MESSAGE);
 				toSend.setData(data);
-				mDbHelper.deleteSms(SmsDbHelper.SMS_URI, smsModel.getId());
+				mDbHelper.deleteSms(smsModel.getId());
 				if (mClients.get(clientId) != null) {
 					mClients.get(clientId).send(toSend);
 				}
@@ -297,7 +297,7 @@ public class SendTaskService extends Service {
 				smsModel.setDate(System.currentTimeMillis());
 				addToQueue(smsModel, 0, "");
 			} else {
-				mDbHelper.deleteSms(SmsDbHelper.SMS_URI, smsModel.getId());
+				mDbHelper.deleteSms(smsModel.getId());
 				l.remove(smsModel);
 			}
 		}

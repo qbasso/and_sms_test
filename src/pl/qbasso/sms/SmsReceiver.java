@@ -7,7 +7,6 @@ import java.util.ArrayList;
 
 import pl.qbasso.activities.ConversationList;
 import pl.qbasso.activities.SmsConversationActivity;
-import pl.qbasso.custom.SendTaskService;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.smssender.R;
@@ -130,7 +129,7 @@ public class SmsReceiver extends BroadcastReceiver {
 
 	private void notify(Context ctx, SmsModel model) {
 		long threadId;
-		Uri u = smsDb.insertSms(SmsDbHelper.SMS_URI, model);
+		Uri u = smsDb.insertSms(model);
 		if (u!=null) {
 			model.setId(Long.valueOf(u.getLastPathSegment()));
 		}
