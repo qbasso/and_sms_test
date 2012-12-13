@@ -1,5 +1,7 @@
 package pl.qbassso.smsdb;
 
+import java.util.HashMap;
+
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import android.content.ContentProvider;
@@ -24,6 +26,22 @@ public class SmsProvider extends ContentProvider {
 	private static final int SMS_INBOX_ID_CODE = 8;
 	private static final int SMS_DRAFT_CODE = 9;
 	private static final int SMS_DRAFT_ID_CODE = 10;
+	
+	public final static String COLUMN_SMS_ID = "id";
+	public final static String COLUMN_SMS_THREAD_ID = "thread_id";
+	public final static String COLUMN_SMS_ADDRESS = "address";
+	public final static String COLUMN_SMS_DATE = "date";
+	public final static String COLUMN_SMS_READ = "read";
+	public final static String COLUMN_SMS_STATUS = "status";
+	public static final String COLUMN_SMS_TYPE = "type";
+	public final static String COLUMN_SMS_BODY = "body";
+	
+	public final static String COLUMN_CONVERSATION_ID = "id";
+	public final static String COLUMN_CONVERSATION_SNIPPET = "snippet";
+	public final static String COLUMN_CONVERSATION_COUNT = "count";
+	public final static String COLUMN_CONVERSATION_DATE = "date";
+	public final static String COLUMN_CONVERSATION_UNREAD = "unread";
+	public final static String COLUMN_CONVERSATION_DRAFT = "has_draft";
 
 	private final static String AUTHORITY = "pl.qbasso.smsdb.SmsProvider";
 	private final static String SCHEME = "content://";
@@ -41,6 +59,9 @@ public class SmsProvider extends ContentProvider {
 			+ SMS_DRAFT_PATH);
 	public final static Uri CONVERSATION_CONTENT_URI = Uri.parse(SCHEME
 			+ AUTHORITY + CONVERSATION_PATH);
+	
+	public static HashMap<String, Integer> sSmsProjectionMap;
+	public static HashMap<String, Integer> sConversationProjectionMap;
 
 	static {
 		sMatcher.addURI(AUTHORITY, "sms", SMS_CODE);
@@ -53,6 +74,24 @@ public class SmsProvider extends ContentProvider {
 		sMatcher.addURI(AUTHORITY, "sms/draft/#", SMS_DRAFT_ID_CODE);
 		sMatcher.addURI(AUTHORITY, "conversation", CONVERSATION_CODE);
 		sMatcher.addURI(AUTHORITY, "conversation/#", CONVERSATION_ID_CODE);
+		
+		sSmsProjectionMap = new HashMap<String, Integer>();
+		sSmsProjectionMap.put(COLUMN_SMS_ID, 0);
+		sSmsProjectionMap.put(COLUMN_SMS_THREAD_ID, 1);
+		sSmsProjectionMap.put(COLUMN_SMS_ADDRESS, 2);
+		sSmsProjectionMap.put(COLUMN_SMS_DATE, 3);
+		sSmsProjectionMap.put(COLUMN_SMS_READ, 4);
+		sSmsProjectionMap.put(COLUMN_SMS_STATUS, 5);
+		sSmsProjectionMap.put(COLUMN_SMS_TYPE, 6);
+		sSmsProjectionMap.put(COLUMN_SMS_BODY, 7);
+		
+		sConversationProjectionMap = new HashMap<String, Integer>();
+		sConversationProjectionMap.put(COLUMN_CONVERSATION_ID, 0);
+		sConversationProjectionMap.put(COLUMN_CONVERSATION_SNIPPET, 1);
+		sConversationProjectionMap.put(COLUMN_CONVERSATION_COUNT, 2);
+		sConversationProjectionMap.put(COLUMN_CONVERSATION_DATE, 3);
+		sConversationProjectionMap.put(COLUMN_CONVERSATION_UNREAD, 4);
+		sConversationProjectionMap.put(COLUMN_CONVERSATION_DRAFT, 5);
 	}
 
 	@Override
@@ -88,7 +127,9 @@ public class SmsProvider extends ContentProvider {
 		default:
 			break;
 		}
-		getContext().getContentResolver().notifyChange(arg0, null);
+		if (result > 0) {
+			getContext().getContentResolver().notifyChange(arg0, null);
+		}
 		return result;
 	}
 
@@ -186,10 +227,10 @@ public class SmsProvider extends ContentProvider {
 		default:
 			break;
 		}
-		if (code > CONVERSATION_CODE && code <= CONVERSATION_ID_CODE) {
-			qb.setTables(SmsDatabaseHelper.SMS_TABLE_NAME);
-		} else {
+		if (code == CONVERSATION_CODE || code == CONVERSATION_ID_CODE) {
 			qb.setTables(SmsDatabaseHelper.CONVERSATION_TABLE_NAME);
+		} else {
+			qb.setTables(SmsDatabaseHelper.SMS_TABLE_NAME);
 		}
 		result = qb.query(db, arg1, arg2, arg3, null, null, arg4);
 		return result;
@@ -222,7 +263,7 @@ public class SmsProvider extends ContentProvider {
 		default:
 			break;
 		}
-		if (count>0) {
+		if (count > 0) {
 			getContext().getContentResolver().notifyChange(arg0, null);
 		}
 		return count;

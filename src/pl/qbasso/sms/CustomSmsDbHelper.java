@@ -15,7 +15,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract.PhoneLookup;
 
-public class CustomSmsDbHelper implements ISmsAccess{
+public class CustomSmsDbHelper implements ISmsAccess {
 	/** The Constant SMS_URI. */
 	public static final Uri SMS_URI = SmsProvider.SMS_URI;
 	/** The Constant SMS_OUTBOX_URI. */
@@ -35,26 +35,30 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		this.resolver = r;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#updateSmsStatus(android.net.Uri, int, int)
 	 */
 	public int updateSmsStatus(Uri u, int smsStatus, int smsType) {
 		int result;
 		ContentValues values = new ContentValues();
-		values.put(SmsModel.STATUS, smsStatus);
-		values.put(SmsModel.TYPE, smsType);
+		values.put(SmsProvider.COLUMN_SMS_STATUS, smsStatus);
+		values.put(SmsProvider.COLUMN_SMS_TYPE, smsType);
 		result = resolver.update(u, values, null, null);
 		return result;
 	}
 
-	/* (non-Javadoc)
-	 * @see pl.qbasso.sms.ISmsAccess#insertSms(android.net.Uri, pl.qbasso.models.SmsModel)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see pl.qbasso.sms.ISmsAccess#insertSms(android.net.Uri,
+	 * pl.qbasso.models.SmsModel)
 	 */
 	public Uri insertSms(SmsModel m) {
 		ContentValues values = new ContentValues();
 		values.put(SmsModel.ADDRESS, m.getAddress());
 		values.put(SmsModel.BODY, m.getBody());
-		values.put(SmsModel.SUBJECT, "");
 		values.put(SmsModel.READ, m.getRead());
 		if (m.getDate() != 0) {
 			values.put(SmsModel.DATE, m.getDate());
@@ -67,7 +71,9 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		return resolver.insert(SMS_URI, values);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getThreadIdForSmsUri(android.net.Uri)
 	 */
 	public long getThreadIdForSmsUri(Uri u) {
@@ -82,7 +88,9 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getThreadIdForPhoneNumber(java.lang.String)
 	 */
 	public long getThreadIdForPhoneNumber(String phoneNumber) {
@@ -97,8 +105,11 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		return result;
 	}
 
-	/* (non-Javadoc)
-	 * @see pl.qbasso.sms.ISmsAccess#getAddressForThreadId(java.lang.String, java.lang.String)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see pl.qbasso.sms.ISmsAccess#getAddressForThreadId(java.lang.String,
+	 * java.lang.String)
 	 */
 	public String getAddressForThreadId(String phoneNumber, String displayName) {
 		if (displayName == null) {
@@ -125,7 +136,9 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		}
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getDisplayName(java.lang.String)
 	 */
 	public String getDisplayName(String phoneNumber) {
@@ -165,7 +178,9 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		return phoneNumber;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getThreads(java.util.HashSet)
 	 */
 	public List<ConversationModel> getThreads(HashSet<Long> needRefresh) {
@@ -182,12 +197,22 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		}
 		if (c != null) {
 			while (c.moveToNext()) {
-				ConversationModel m = new ConversationModel(c.getLong(0),
-						c.getInt(1), c.getString(2));
+				ConversationModel m = new ConversationModel(
+						c.getLong(SmsProvider.sSmsProjectionMap
+								.get(SmsProvider.COLUMN_CONVERSATION_ID)),
+						c.getInt(SmsProvider.sConversationProjectionMap
+								.get(SmsProvider.COLUMN_CONVERSATION_COUNT)),
+						c.getString(SmsProvider.sConversationProjectionMap
+								.get(SmsProvider.COLUMN_CONVERSATION_SNIPPET)));
 				String phoneNumber = getPhoneNumber(m.getThreadId());
-				getLastModified(m);
-				getUnreadCount(m);
-				checkForDraft(m);
+				m.setLastModified(c
+						.getLong(SmsProvider.sConversationProjectionMap
+								.get(SmsProvider.COLUMN_CONVERSATION_DATE)));
+				m.setUnread(c.getInt(SmsProvider.sConversationProjectionMap
+						.get(SmsProvider.COLUMN_CONVERSATION_UNREAD)));
+				m.setDraft(c.getInt(SmsProvider.sConversationProjectionMap
+						.get(SmsProvider.COLUMN_CONVERSATION_DRAFT)) > 0 ? true
+						: false);
 				String displayName = getDisplayName(phoneNumber);
 				m.setAddress(phoneNumber);
 				m.setDisplayName(getThreadDisplayName(phoneNumber, displayName));
@@ -196,19 +221,6 @@ public class CustomSmsDbHelper implements ISmsAccess{
 			c.close();
 		}
 		return result;
-	}
-
-	private void getLastModified(ConversationModel m) {
-		Cursor c = resolver.query(SMS_URI, new String[] { SmsModel.DATE },
-				SmsModel.THREAD_ID + "= ?",
-				new String[] { String.valueOf(m.getThreadId()) },
-				"date DESC limit 1");
-		if (c != null) {
-			if (c.moveToNext()) {
-				m.setLastModified(c.getLong(0));
-			}
-			c.close();
-		}
 	}
 
 	private String[] buildListOfParameters(HashSet<Long> needRefresh) {
@@ -233,65 +245,27 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		return "";
 	}
 
-	/**
-	 * Check for draft.
+	/*
+	 * (non-Javadoc)
 	 * 
-	 * @param m
-	 *            the m
-	 */
-	private void checkForDraft(ConversationModel m) {
-		Cursor c1;
-		c1 = resolver.query(SMS_DRAFT_URI, new String[] { SmsModel.BODY },
-				SmsModel.THREAD_ID + "= ?",
-				new String[] { String.valueOf(m.getThreadId()) }, null);
-		if (c1 != null) {
-			if (c1.moveToNext()) {
-				m.setSnippet(c1.getString(0));
-				m.setDraft(true);
-			}
-			c1.close();
-		}
-	}
-
-	/**
-	 * Gets the unread count.
-	 * 
-	 * @param m
-	 *            the m
-	 * @return the unread count
-	 */
-	private void getUnreadCount(ConversationModel m) {
-		Cursor c1;
-		c1 = resolver.query(
-				SMS_URI,
-				new String[] { "count(read)" },
-				SmsModel.THREAD_ID + "= ? and " + SmsModel.READ + " = ?",
-				new String[] { String.valueOf(m.getThreadId()),
-						String.valueOf(SmsModel.MESSAGE_NOT_READ) }, null);
-		if (c1 != null) {
-			if (c1.moveToNext()) {
-				m.setUnread(c1.getInt(0));
-			}
-			c1.close();
-		}
-	}
-
-	/* (non-Javadoc)
 	 * @see pl.qbasso.sms.ISmsAccess#getSmsForThread(long)
 	 */
 	public List<SmsModel> getSmsForThread(long threadId) {
 		List<SmsModel> result = new ArrayList<SmsModel>();
 		Cursor c = resolver.query(
 				SMS_URI,
-				new String[] { SmsModel.ID, SmsModel.BODY, SmsModel.ADDRESS,
-						SmsModel.DATE, SmsModel.TYPE, SmsModel.READ,
-						SmsModel.STATUS },
+				new String[] { SmsProvider.COLUMN_SMS_ID,
+						SmsProvider.COLUMN_SMS_BODY,
+						SmsProvider.COLUMN_SMS_ADDRESS,
+						SmsProvider.COLUMN_SMS_DATE,
+						SmsProvider.COLUMN_SMS_TYPE,
+						SmsProvider.COLUMN_SMS_READ,
+						SmsProvider.COLUMN_SMS_STATUS },
 				SmsModel.THREAD_ID + "=? and " + SmsModel.TYPE + " <> ?",
 				new String[] { String.valueOf(threadId),
 						String.valueOf(SmsModel.MESSAGE_TYPE_DRAFT) },
 				"date ASC");
 		if (c != null) {
-			String[] columns = c.getColumnNames();
 			while (c.moveToNext()) {
 				result.add(new SmsModel(c.getLong(0), threadId, c.getString(2),
 						"", c.getLong(3), c.getString(1), c.getInt(4), c
@@ -302,7 +276,9 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getSingleSms(android.net.Uri)
 	 */
 	public SmsModel getSingleSms(Uri u) {
@@ -322,7 +298,9 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#deleteThread(long)
 	 */
 	public void deleteThread(long threadId) {
@@ -332,7 +310,9 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		// new String[] { String.valueOf(threadId) });
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#deleteSms(android.net.Uri, long)
 	 */
 	public void deleteSms(long smsId) {
@@ -340,7 +320,9 @@ public class CustomSmsDbHelper implements ISmsAccess{
 				new String[] { String.valueOf(smsId) });
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#updateSmsRead(long, int)
 	 */
 	public int updateSmsRead(long id, int messageRead) {
@@ -348,12 +330,14 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		Uri u = Uri.withAppendedPath(SMS_URI, String.valueOf(id));
 		ContentValues v = new ContentValues();
 		v.put(SmsModel.READ, messageRead);
-	
+
 		result = resolver.update(u, v, null, null);
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getDraftIdForThread(long)
 	 */
 	public long getDraftIdForThread(long threadId) {
@@ -372,7 +356,9 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getDraftTextForThread(long)
 	 */
 	public String getDraftTextForThread(long threadId) {
@@ -391,8 +377,11 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		return result;
 	}
 
-	/* (non-Javadoc)
-	 * @see pl.qbasso.sms.ISmsAccess#updateDraftMessage(long, java.lang.String, long)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see pl.qbasso.sms.ISmsAccess#updateDraftMessage(long, java.lang.String,
+	 * long)
 	 */
 	public int updateDraftMessage(long msgId, String body, long date) {
 		int result = 0;
@@ -406,7 +395,9 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#deleteDraftForThread(long)
 	 */
 	public int deleteDraftForThread(long threadId) {
@@ -419,7 +410,9 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getMessagesNotSent()
 	 */
 	public List<SmsModel> getMessagesNotSent() {
@@ -442,7 +435,9 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getUnreadCount()
 	 */
 	public int getUnreadCount() {
@@ -459,6 +454,5 @@ public class CustomSmsDbHelper implements ISmsAccess{
 		}
 		return result;
 	}
-
 
 }

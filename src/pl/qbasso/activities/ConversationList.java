@@ -371,7 +371,6 @@ public class ConversationList extends Activity { // implements
 					Cache.putAll(smsAccessor.getThreads(null));
 					items = Cache.getAll();
 				} else {
-					
 					Cache.putInOrder(smsAccessor.getThreads(Cache
 							.getRefreshList()));
 					Cache.clearRefreshSet();
@@ -414,7 +413,7 @@ public class ConversationList extends Activity { // implements
 		smsThreadList = (ListView) findViewById(R.id.main_thread_list);
 		smsThreadList.setOnItemClickListener(smsThreadClickListener);
 		smsThreadList.setOnItemLongClickListener(itemLongClckListener);
-		smsAccessor = new SmsDbHelper(getContentResolver());
+		smsAccessor = new CustomSmsDbHelper(getContentResolver());
 		composeButton = (Button) findViewById(R.id.button_compose_new);
 		composeButton.setOnClickListener(composeButtonListener);
 		pd = new ProgressDialog(ctx);
