@@ -5,10 +5,13 @@ package pl.qbasso.activities;
 
 import java.util.ArrayList;
 
+import pl.qbasso.custom.BaseApplication;
 import pl.qbasso.custom.ContactsAdapter;
 import pl.qbasso.custom.Utils;
+import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
+import pl.qbasso.sms.CustomSmsDbHelper;
 import pl.qbasso.sms.SmsDbHelper;
 import pl.qbasso.sms.SmsLengthWatcher;
 import pl.qbasso.smssender.R;
@@ -19,12 +22,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.AdapterView;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.AdapterView.OnItemClickListener;
-import android.widget.AutoCompleteTextView;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -58,7 +59,7 @@ public class SendSms extends Activity {
 		}
 	};
 
-	private SmsDbHelper smsAccessor;
+	private ISmsAccess smsAccessor;
 
 	/*
 	 * (non-Javadoc)
@@ -70,7 +71,7 @@ public class SendSms extends Activity {
 		super.onCreate(savedInstanceState);
 		Uri u = getIntent().getData();
 		ctx = this;
-		smsAccessor = new SmsDbHelper(getContentResolver());
+		smsAccessor = ((BaseApplication)getApplication()).getSmsDatabase();
 		setContentView(R.layout.send_sms_screen);
 		contactInput = (AutoCompleteTextView) findViewById(R.id.recipient_input);
 		contactsAdapter = new ContactsAdapter(ctx, R.layout.contact_item);
@@ -101,7 +102,7 @@ public class SendSms extends Activity {
 			m.setAddressDisplayName(contactsAdapter
 					.getCurrentlySelectedDisplayName() != null ? contactsAdapter
 					.getCurrentlySelectedDisplayName() : m.getAddress());
-			Uri u = smsAccessor.insertSms(SmsDbHelper.SMS_URI, m);
+			Uri u = smsAccessor.insertSms(m);
 			if (threadId == -1) {
 				threadId = smsAccessor.getThreadIdForSmsUri(u);
 				m.setThreadId(threadId);

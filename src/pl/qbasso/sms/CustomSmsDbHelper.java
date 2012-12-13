@@ -1,8 +1,4 @@
-/*
- * @author JPorzuczek
- */
 package pl.qbasso.sms;
-
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -12,35 +8,30 @@ import java.util.List;
 import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
+import pl.qbassso.smsdb.SmsProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.ContactsContract.PhoneLookup;
 
-// TODO: Auto-generated Javadoc
-/**
- * The Class SmsDbHelper.
- */
-public class SmsDbHelper implements ISmsAccess  {
-
+public class CustomSmsDbHelper implements ISmsAccess{
 	/** The Constant SMS_URI. */
-	public static final Uri SMS_URI = Uri.parse("content://sms");
+	public static final Uri SMS_URI = SmsProvider.SMS_URI;
 	/** The Constant SMS_OUTBOX_URI. */
-	public static final Uri SMS_OUTBOX_URI = Uri.parse("content://sms/sent");
+	public static final Uri SMS_OUTBOX_URI = SmsProvider.SMS_OUTBOX_URI;
 	/** The Constant SMS_INBOX_URI. */
-	public static final Uri SMS_INBOX_URI = Uri.parse("content://sms/inbox");
+	public static final Uri SMS_INBOX_URI = SmsProvider.SMS_INBOX_URI;
 	/** The Constant SMS_DRAFT_URI. */
-	public static final Uri SMS_DRAFT_URI = Uri.parse("content://sms/draft");
+	public static final Uri SMS_DRAFT_URI = SmsProvider.SMS_DRAFT_URI;
 	/** The Constant SMS_CONVERSATIONS_URI. */
-	public static final Uri SMS_CONVERSATIONS_URI = Uri
-				.parse("content://sms/conversations");
+	public static final Uri SMS_CONVERSATIONS_URI = SmsProvider.CONVERSATION_CONTENT_URI;
 	/** The Constant SMS_SORT_ORDER. */
 	public static final String SMS_SORT_ORDER = "date DESC";
 	/** The resolver. */
 	protected ContentResolver resolver;
 
-	public SmsDbHelper(ContentResolver r) {
+	public CustomSmsDbHelper(ContentResolver r) {
 		this.resolver = r;
 	}
 
@@ -468,4 +459,6 @@ public class SmsDbHelper implements ISmsAccess  {
 		}
 		return result;
 	}
+
+
 }

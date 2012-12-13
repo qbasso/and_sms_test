@@ -1,4 +1,4 @@
-package pl.smsdb;
+package pl.qbassso.smsdb;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class SmsDatabaseHelper extends SQLiteOpenHelper {
 
-	private static final int DATABASE_VERSION = 1;
+	private static final int DATABASE_VERSION = 2;
 
 	private static final String DATABASE_NAME = "pl.qbasso.smsdb";
 
@@ -16,20 +16,21 @@ public class SmsDatabaseHelper extends SQLiteOpenHelper {
 
 	private static final String CREATE_SMS_TABLE = "create table if not exists "
 			+ SMS_TABLE_NAME
-			+ "("
-			+ "id integer primary key not null autoincrement,"
+			+ " ("
+			+ "id integer primary key autoincrement,"
 			+ " thread_id integer not null references conversations (id) on delete cascade,"
 			+ " address text not null,"
 			+ " date integer,"
 			+ " read integer,"
 			+ " status integer," + " body text" + ")";
 
-	private static final String CREATE_CONVERSATION_TABLE = "create table if not exists"
+	private static final String CREATE_CONVERSATION_TABLE = "create table if not exists "
 			+ CONVERSATION_TABLE_NAME
 			+ "("
-			+ "id integer primary key not null autoincrement,"
+			+ "id integer primary key autoincrement,"
 			+ " snippet text,"
 			+ " count integer,"
+			+ " date integer,"
 			+ " unread integer,"
 			+ " has_draft integer" + ")";
 
@@ -45,7 +46,9 @@ public class SmsDatabaseHelper extends SQLiteOpenHelper {
 
 	@Override
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-
+		db.execSQL("DROP TABLE IF EXISTS " + SMS_TABLE_NAME);
+		db.execSQL("DROP TABLE IF EXISTS " + CONVERSATION_TABLE_NAME);
+		onCreate(db);
 	}
 
 }

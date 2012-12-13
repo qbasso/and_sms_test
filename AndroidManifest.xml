@@ -8,7 +8,7 @@
         android:targetSdkVersion="15" />
 
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.SEND_SMS" />
@@ -50,14 +50,16 @@
             android:permission="android.permission.SEND_SMS" >
             <intent-filter>
                 <action android:name="android.intent.action.SENDTO" />
+
                 <data android:scheme="sms" />
                 <data android:scheme="smsto" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
             </intent-filter>
         </activity>
 
-        <receiver android:name="pl.qbasso.sms.CustomReceivers$SmsSentReceiver" >
+        <receiver android:name="pl.qbasso.sms.CustomReceivers$SmsSentReceiver" android:exported="false">
             <intent-filter android:priority="1000" >
                 <action android:name="pl.qbasso.SENT" />
                 <action android:name="pl.qbasso.RESEND" />
@@ -66,6 +68,12 @@
 
         <service android:name="pl.qbasso.custom.SendTaskService" >
         </service>
+
+        <provider
+            android:name="pl.qbassso.smsdb.SmsProvider"
+            android:authorities="pl.qbasso.smsdb.SmsProvider"
+            android:exported="false" >
+        </provider>
     </application>
 
 </manifest>

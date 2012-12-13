@@ -4,16 +4,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import pl.qbasso.custom.BaseApplication;
 import pl.qbasso.custom.ContactsAdapter;
 import pl.qbasso.custom.ConversationAdapter;
 import pl.qbasso.custom.SendTaskService;
 import pl.qbasso.custom.SlideHelper;
 import pl.qbasso.custom.Utils;
+import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.interfaces.SlidingViewLoadedListener;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.Cache;
-import pl.qbasso.sms.SmsDbHelper;
+import pl.qbasso.sms.CustomSmsDbHelper;
 import pl.qbasso.sms.SmsLengthWatcher;
 import pl.qbasso.sms.SmsReceiver;
 import pl.qbasso.sms.SmsSendHelper;
@@ -74,7 +76,7 @@ public class ConversationList extends Activity { // implements
 	private static final String EXTRA_CANCEL_ALARM = "cancel_alarm";
 
 	/** Provides access to sms database */
-	private SmsDbHelper smsAccessor;
+	private ISmsAccess smsAccessor;
 
 	/** holds reference to conversation list */
 	private ListView smsThreadList;
@@ -411,7 +413,7 @@ public class ConversationList extends Activity { // implements
 		smsThreadList = (ListView) findViewById(R.id.main_thread_list);
 		smsThreadList.setOnItemClickListener(smsThreadClickListener);
 		smsThreadList.setOnItemLongClickListener(itemLongClckListener);
-		smsAccessor = new SmsDbHelper(getContentResolver());
+		smsAccessor = ((BaseApplication)getApplication()).getSmsDatabase();
 		composeButton = (Button) findViewById(R.id.button_compose_new);
 		composeButton.setOnClickListener(composeButtonListener);
 		pd = new ProgressDialog(ctx);
@@ -531,7 +533,7 @@ public class ConversationList extends Activity { // implements
 			m.setAddressDisplayName(contactsAdapter
 					.getCurrentlySelectedDisplayName() != null ? contactsAdapter
 					.getCurrentlySelectedDisplayName() : m.getAddress());
-			Uri u = smsAccessor.insertSms(SmsDbHelper.SMS_URI, m);
+			Uri u = smsAccessor.insertSms(m);
 			if (threadId == -1) {
 				threadId = smsAccessor.getThreadIdForSmsUri(u);
 				m.setThreadId(threadId);
