@@ -30,7 +30,9 @@ public class Cache {
 
 	public static synchronized void addToRefreshSet(Long threadId, boolean start) {
 		sNeedRefresh.add(threadId);
-		sRefreshType.put(threadId, start);
+		if (!sRefreshType.containsKey(threadId)) {
+			sRefreshType.put(threadId, start);
+		}
 	}
 
 	public static synchronized void clearRefreshSet() {
@@ -42,6 +44,7 @@ public class Cache {
 			delete(m.getThreadId());
 			sConversations.add(0, m);
 			rebuildPositions();
+
 		} else {
 			int pos = sPositions.get(m.getThreadId());
 			sConversations.remove(pos);
@@ -64,7 +67,7 @@ public class Cache {
 	public static synchronized void putInOrder(
 			Collection<? extends ConversationModel> c) {
 		Object[] models = c.toArray();
-		for (int i=models.length-1; i>=0; i--) {
+		for (int i = models.length - 1; i >= 0; i--) {
 			ConversationModel m = (ConversationModel) models[i];
 			Boolean b = sRefreshType.get(m.getThreadId());
 			put(m, b != null ? b : true);
@@ -94,7 +97,7 @@ public class Cache {
 	public static synchronized List<ConversationModel> getAll() {
 		return sConversations;
 	}
-	
+
 	public static synchronized void delete(long threadId) {
 		int pos = sPositions.get(threadId) != null ? sPositions.get(threadId)
 				: -1;
@@ -111,7 +114,7 @@ public class Cache {
 	public static HashSet<Long> getRefreshList() {
 		return sNeedRefresh;
 	}
-	
+
 	private static void rebuildPositions() {
 		sPositions.clear();
 		int i = 0;

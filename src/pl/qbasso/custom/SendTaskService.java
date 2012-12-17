@@ -8,7 +8,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
 
+import pl.qbasso.activities.AppConstants;
+import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.models.SmsModel;
+import pl.qbasso.sms.CustomSmsDbHelper;
 import pl.qbasso.sms.SmsDbHelper;
 import pl.qbasso.sms.SmsSendHelper;
 import android.app.Service;
@@ -68,7 +71,7 @@ public class SendTaskService extends Service {
 	private Context mContext;
 
 	/** The m db helper. */
-	private SmsDbHelper mDbHelper;
+	private ISmsAccess mDbHelper;
 
 	/** The m send helper. */
 	private SmsSendHelper mSendHelper;
@@ -86,6 +89,11 @@ public class SendTaskService extends Service {
 				Log.i(TAG, String.format(
 						"Client with id %s connected. Total clients: %d",
 						b.getString(EXTRA_CLIENT_ID), mClients.size()));
+				try {
+					m.replyTo.send(Message.obtain(null, REGISTER));
+				} catch (RemoteException e) {
+					e.printStackTrace();
+				}
 				break;
 			case UNREGISTER:
 				mClients.remove(b.getString(EXTRA_CLIENT_ID));
@@ -285,7 +293,11 @@ public class SendTaskService extends Service {
 	public void onCreate() {
 		super.onCreate();
 		mContext = this;
-		mDbHelper = new SmsDbHelper(getContentResolver());
+		if (AppConstants.DB == 1) {
+			mDbHelper = new SmsDbHelper(getContentResolver());
+		} else {
+			mDbHelper = new CustomSmsDbHelper(getContentResolver());
+		}
 		mSendHelper = new SmsSendHelper();
 		List<SmsModel> l = mDbHelper.getMessagesNotSent();
 		Iterator<SmsModel> it = l.iterator();

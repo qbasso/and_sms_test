@@ -3,6 +3,8 @@
  */
 package pl.qbasso.sms;
 
+import pl.qbasso.activities.AppConstants;
+import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.models.SmsModel;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
@@ -93,7 +95,12 @@ public class CustomReceivers {
 		 */
 		private void sendActionFailed(final Context arg0, Intent intent) {
 			SmsModel m;
-			SmsDbHelper smsAccessor = new SmsDbHelper(arg0.getContentResolver());
+			ISmsAccess smsAccessor;
+			if (AppConstants.DB == 1) {
+				smsAccessor = new SmsDbHelper(arg0.getContentResolver());
+			} else {
+				smsAccessor = new CustomSmsDbHelper(arg0.getContentResolver());
+			}
 			m = (SmsModel) intent
 					.getSerializableExtra(SmsSendHelper.EXTRA_MESSAGE);
 			// Intent updateIntent = new Intent(SmsSendHelper.ACTION_UPDATE);
@@ -143,7 +150,12 @@ public class CustomReceivers {
 		 */
 		private void sendActionOk(final Context arg0, Intent intent) {
 			SmsModel m;
-			SmsDbHelper smsAccessor = new SmsDbHelper(arg0.getContentResolver());
+			ISmsAccess smsAccessor;
+			if (AppConstants.DB == 1) {
+				smsAccessor = new SmsDbHelper(arg0.getContentResolver());
+			} else {
+				smsAccessor = new CustomSmsDbHelper(arg0.getContentResolver());
+			}
 			m = (SmsModel) intent
 					.getSerializableExtra(SmsSendHelper.EXTRA_MESSAGE);
 			Intent updateIntent = new Intent(SmsSendHelper.ACTION_UPDATE);

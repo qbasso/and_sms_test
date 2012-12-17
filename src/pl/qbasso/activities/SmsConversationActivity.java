@@ -3,13 +3,18 @@
  */
 package pl.qbasso.activities;
 
+import java.util.HashMap;
+import java.util.Map.Entry;
+
 import pl.qbasso.custom.SmsThreadPageAdapter;
 import pl.qbasso.fragments.SmsConversation;
+import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.interfaces.ItemSeenListener;
 import pl.qbasso.interfaces.SmsDraftAvailableListener;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.Cache;
+import pl.qbasso.sms.CustomSmsDbHelper;
 import pl.qbasso.sms.SmsDbHelper;
 import pl.qbasso.sms.SmsLengthWatcher;
 import pl.qbasso.sms.SmsReceiver;
@@ -58,7 +63,7 @@ public class SmsConversationActivity extends FragmentActivity implements
 	private ConversationModel[] listInfo;
 
 	/** The helper. */
-	private SmsDbHelper helper;
+	private ISmsAccess helper;
 
 	/** The sms input. */
 	private EditText smsInput;
@@ -73,6 +78,8 @@ public class SmsConversationActivity extends FragmentActivity implements
 	protected Context ctx;
 
 	private NotificationManager nm;
+
+	private HashMap<Long, Integer> renderedButNotSeen = new HashMap<Long, Integer>();
 
 	private BroadcastReceiver receiver = new BroadcastReceiver() {
 
@@ -122,6 +129,11 @@ public class SmsConversationActivity extends FragmentActivity implements
 			} else {
 				smsInput.setText("");
 			}
+			for (Entry<Long, Integer> item : renderedButNotSeen.entrySet()) {
+				if (arg0 == item.getValue()) {
+					markAsRead(item.getValue(), item.getKey());
+				}
+			}
 		}
 
 		public void onPageScrollStateChanged(int arg0) {
@@ -142,7 +154,11 @@ public class SmsConversationActivity extends FragmentActivity implements
 		super.onCreate(savedInstanceState);
 		ctx = this;
 		nm = (NotificationManager) getSystemService(Activity.NOTIFICATION_SERVICE);
-		helper = new SmsDbHelper(getContentResolver());
+		if (AppConstants.DB == 1) {
+			helper = new SmsDbHelper(getContentResolver());
+		} else {
+			helper = new CustomSmsDbHelper(getContentResolver());
+		}
 		setContentView(R.layout.thread_pager);
 		if (getIntent().getBooleanExtra(SmsReceiver.EXTRA_CANCEL_ALARM, false)) {
 			AlarmManager am = (AlarmManager) ctx
@@ -206,7 +222,7 @@ public class SmsConversationActivity extends FragmentActivity implements
 				SmsModel m = new SmsModel(0, cm.getThreadId(), cm.getAddress(),
 						"", System.currentTimeMillis(), smsInput.getText()
 								.toString(), SmsModel.MESSAGE_TYPE_DRAFT,
-						SmsModel.MESSAGE_NOT_READ, SmsModel.STATUS_NONE);
+						SmsModel.MESSAGE_READ, SmsModel.STATUS_NONE);
 				helper.insertSms(m);
 			}
 			Toast.makeText(ctx, "Dodano do wersji roboczych",
@@ -229,10 +245,18 @@ public class SmsConversationActivity extends FragmentActivity implements
 	 */
 	public void onItemSeen(int adapterId, long messageId) {
 		if (viewPager.getCurrentItem() == adapterId) {
-			helper.updateSmsRead(messageId, SmsModel.MESSAGE_READ);
-			Cache.addToRefreshSet(listInfo[viewPager.getCurrentItem()]
-					.getThreadId(), false);
+			markAsRead(adapterId, messageId);
+		} else {
+			if (!renderedButNotSeen.containsKey(messageId)) {
+				renderedButNotSeen.put(messageId, adapterId);
+			}
 		}
+	}
+
+	private void markAsRead(int adapterId, long messageId) {
+		helper.updateSmsRead(messageId, SmsModel.MESSAGE_READ);
+		Cache.addToRefreshSet(listInfo[adapterId].getThreadId(), false);
+		nm.cancelAll();
 	}
 
 	/*
@@ -272,7 +296,8 @@ public class SmsConversationActivity extends FragmentActivity implements
 	@Override
 	protected void onResume() {
 		super.onResume();
-		registerReceiver(receiver, new IntentFilter(SmsReceiver.ACTION_MESSAGE_ARRIVED));
+		registerReceiver(receiver, new IntentFilter(
+				SmsReceiver.ACTION_MESSAGE_ARRIVED));
 	}
 
 }

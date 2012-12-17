@@ -5,8 +5,10 @@ package pl.qbasso.sms;
 
 import java.util.ArrayList;
 
+import pl.qbasso.activities.AppConstants;
 import pl.qbasso.activities.ConversationList;
 import pl.qbasso.activities.SmsConversationActivity;
+import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.smssender.R;
@@ -40,9 +42,10 @@ public class SmsReceiver extends BroadcastReceiver {
 	public static final String ACTION_RECEIVE_SMS = "android.provider.Telephony.SMS_RECEIVED";
 	public static final String ACTION_MESSAGE_ARRIVED = "pl.qbasso.sms.smsreceiver.MESSAGE_ARRIVED";
 	public static final String ACTION_CANCEL_LIGHT = "pl.qbasso.sms.smsreceiver.CANCEL_LED";
+	private static int pendingIntentCounter = 0;
 	private static NotificationManager nm;
 	private static AlarmManager am;
-	private static SmsDbHelper smsDb;
+	private static ISmsAccess smsDb;
 	public static final int NOTIFICATION_ID = 1;
 	public static final String EXTRA_CANCEL_ALARM = "cancel_alarm";
 	private static final String TAG = "SmsReceiver";
@@ -59,7 +62,11 @@ public class SmsReceiver extends BroadcastReceiver {
 		SmsModel model = null;
 		String previousOriginatingAddress = null;
 		if (smsDb == null) {
-			smsDb = new SmsDbHelper(ctx.getContentResolver());
+			if (AppConstants.DB == 1) {
+				smsDb = new SmsDbHelper(ctx.getContentResolver());
+			} else {
+				smsDb = new CustomSmsDbHelper(ctx.getContentResolver());
+			}
 		}
 		if (nm == null) {
 			nm = (NotificationManager) ctx
@@ -92,7 +99,6 @@ public class SmsReceiver extends BroadcastReceiver {
 						model.setBody(model.getBody() + msg.getMessageBody());
 					}
 				}
-				Cache.addToRefreshSet(model.getThreadId(), true);
 				notify(ctx, model);
 			}
 			this.abortBroadcast();
@@ -106,8 +112,7 @@ public class SmsReceiver extends BroadcastReceiver {
 					"Cancel LED broadcast for %s:%s. New notification shown",
 					i.getStringExtra(EXTRA_SENDER_ADDRESS),
 					i.getStringExtra(EXTRA_MESSAGE_BODY)));
-			nm.notify("", NOTIFICATION_ID,
-					n);
+			nm.notify("", NOTIFICATION_ID, n);
 		}
 
 	}
@@ -128,30 +133,38 @@ public class SmsReceiver extends BroadcastReceiver {
 	}
 
 	private void notify(Context ctx, SmsModel model) {
-		long threadId;
-		Uri u = smsDb.insertSms(model);
-		if (u!=null) {
-			model.setId(Long.valueOf(u.getLastPathSegment()));
-		}
-		if (model.getThreadId() == -1) {
-			threadId = smsDb.getThreadIdForSmsUri(u);
-			model.setThreadId(threadId);
-		}
+		persistSms(model);
+		Cache.addToRefreshSet(model.getThreadId(), true);
 		Notification n = prepareNotification(ctx, model.getBody(),
 				model.getAddress(), model.getThreadId(),
 				model.getAddressDisplayName(), true);
 		nm.notify("", NOTIFICATION_ID, n);
-		//TODO here when I used Intent with ACTION_UPDATE (same as in CustomReceiver class) everytime broadcast was received by SmsConversationActivity
-		//extras was empty. When action was changed to MESSAGE_ARRIVED everything is passed via Intent. Weird case, check.
+		// TODO here when I used Intent with ACTION_UPDATE (same as in
+		// CustomReceiver class) everytime broadcast was received by
+		// SmsConversationActivity
+		// extras was empty. When action was changed to MESSAGE_ARRIVED
+		// everything is passed via Intent. Weird case, check.
 		Intent messageArrived = new Intent(ACTION_MESSAGE_ARRIVED);
 		messageArrived.putExtra(EXTRA_THREAD_ID, model.getThreadId());
 		messageArrived.putExtra(SmsSendHelper.EXTRA_MESSAGE, model);
 		Log.i(TAG, String.format(
 				"Notification for %s:%s shown",
 				model.getAddressDisplayName() != null ? model
-						.getAddressDisplayName() : model.getAddress(),
-				model.getBody()));
+						.getAddressDisplayName() : model.getAddress(), model
+						.getBody()));
 		ctx.sendBroadcast(messageArrived);
+	}
+
+	private void persistSms(SmsModel model) {
+		long threadId;
+		Uri u = smsDb.insertSms(model);
+		if (u != null) {
+			model.setId(Long.valueOf(u.getLastPathSegment()));
+		}
+		if (model.getThreadId() == -1) {
+			threadId = smsDb.getThreadIdForSmsUri(u);
+			model.setThreadId(threadId);
+		}
 	}
 
 	/**
@@ -167,6 +180,7 @@ public class SmsReceiver extends BroadcastReceiver {
 	 *            the sender
 	 * @return the notification
 	 */
+	@SuppressWarnings("deprecation")
 	private Notification prepareNotification(Context ctx, String messageBody,
 			String senderAddress, long threadId, String senderDisplayName,
 			boolean lightOn) {
@@ -188,9 +202,9 @@ public class SmsReceiver extends BroadcastReceiver {
 		int number = smsDb.getUnreadCount();
 		if (number < 2) {
 			smsConversationIntent.putExtra(THREAD_NUMBER, 0);
-			// TODO probably not working good enoug when multiple messages will
-			// arrive
 			smsConversationIntent.putExtra(EXTRA_CANCEL_ALARM, true);
+			smsConversationIntent.setAction(String
+					.valueOf(pendingIntentCounter++));
 			pi = PendingIntent.getActivity(ctx, 0, smsConversationIntent,
 					PendingIntent.FLAG_UPDATE_CURRENT);
 			n.setLatestEventInfo(ctx, senderDisplayName,

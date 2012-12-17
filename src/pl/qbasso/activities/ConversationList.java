@@ -178,8 +178,7 @@ public class ConversationList extends Activity { // implements
 	 */
 	private void actionDeleteThread(View v, final ConversationModel item) {
 		smsAccessor.deleteThread(item.getThreadId());
-		Animation anim = AnimationUtils.loadAnimation(ctx,
-				R.anim.slide_right);
+		Animation anim = AnimationUtils.loadAnimation(ctx, R.anim.slide_right);
 		v.startAnimation(anim);
 		mainHandler.postDelayed(new Runnable() {
 			public void run() {
@@ -258,7 +257,7 @@ public class ConversationList extends Activity { // implements
 			updateReceiver = new BroadcastReceiver() {
 				@Override
 				public void onReceive(Context context, Intent intent) {
-						if (intent.getAction().equals(SmsSendHelper.ACTION_UPDATE)) {
+					if (intent.getAction().equals(SmsSendHelper.ACTION_UPDATE)) {
 						SmsModel m = (SmsModel) intent
 								.getSerializableExtra(SmsSendHelper.EXTRA_MESSAGE);
 						updateItems(true);
@@ -413,7 +412,11 @@ public class ConversationList extends Activity { // implements
 		smsThreadList = (ListView) findViewById(R.id.main_thread_list);
 		smsThreadList.setOnItemClickListener(smsThreadClickListener);
 		smsThreadList.setOnItemLongClickListener(itemLongClckListener);
-		smsAccessor = new CustomSmsDbHelper(getContentResolver());
+		if (AppConstants.DB == 1) {
+			smsAccessor = new SmsDbHelper(getContentResolver());
+		} else {
+			smsAccessor = new CustomSmsDbHelper(getContentResolver());
+		}
 		composeButton = (Button) findViewById(R.id.button_compose_new);
 		composeButton.setOnClickListener(composeButtonListener);
 		pd = new ProgressDialog(ctx);
@@ -544,7 +547,8 @@ public class ConversationList extends Activity { // implements
 			conversationModel.setAddress(m.getAddress());
 			conversationModel
 					.setDisplayName(smsAccessor.getDisplayName(sender));
-			ArrayList<ConversationModel> items = new ArrayList<ConversationModel>(this.items);
+			ArrayList<ConversationModel> items = new ArrayList<ConversationModel>(
+					this.items);
 			items.add(0, conversationModel);
 			i.putExtra("threadList", items.toArray());
 			i.putExtra("threadNumber", 0);

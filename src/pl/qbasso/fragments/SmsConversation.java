@@ -3,10 +3,12 @@ package pl.qbasso.fragments;
 import java.util.List;
 import java.util.UUID;
 
+import pl.qbasso.activities.AppConstants;
 import pl.qbasso.activities.SendSms;
 import pl.qbasso.custom.SendTaskService;
 import pl.qbasso.custom.SmsAdapter;
 import pl.qbasso.interfaces.ActionClickListener;
+import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.interfaces.ItemSeenListener;
 import pl.qbasso.interfaces.OnMessageSendCompleteListener;
 import pl.qbasso.interfaces.SmsDraftAvailableListener;
@@ -14,6 +16,7 @@ import pl.qbasso.models.ActionModel;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.Cache;
+import pl.qbasso.sms.CustomSmsDbHelper;
 import pl.qbasso.sms.SmsDbHelper;
 import pl.qbasso.sms.SmsSendHelper;
 import pl.qbasso.smssender.R;
@@ -56,7 +59,7 @@ public class SmsConversation extends Fragment {
 	public static final String EXTRA_CLIENT_ID = "client_id";
 	private int position;
 	private LinearLayout bar;
-	private SmsDbHelper smsAccessor;
+	private ISmsAccess smsAccessor;
 	private ConversationModel info;
 	private List<SmsModel> items;
 	private ListView smsList;
@@ -75,6 +78,7 @@ public class SmsConversation extends Fragment {
 	private Messenger messenger;
 	private Messenger mService;
 	private NotificationManager nm;
+	private boolean shouldSendMessage = false;
 
 	private OnItemLongClickListener itemLongClickListener = new OnItemLongClickListener() {
 
@@ -148,6 +152,12 @@ public class SmsConversation extends Fragment {
 					smsAccessor.deleteThread(info.getThreadId());
 					draftAvailableListener.draftTextAvailable("", position);
 					act.finish();
+				}
+				break;
+			case SendTaskService.REGISTER:
+				if (shouldSendMessage && position == 0) {					
+					sendFromMainScreen(items.get(items.size() - 1));
+					shouldSendMessage = false;
 				}
 				break;
 			default:
@@ -293,7 +303,11 @@ public class SmsConversation extends Fragment {
 		Log.i(TAG,
 				String.format("Creating fragment with client id %s", clientId));
 		messenger = new Messenger(incomingHandler);
-		smsAccessor = new SmsDbHelper(act.getContentResolver());
+		if (AppConstants.DB == 1) {
+			smsAccessor = new SmsDbHelper(act.getContentResolver());
+		} else {
+			smsAccessor = new CustomSmsDbHelper(act.getContentResolver());
+		}
 		bar = (LinearLayout) v.findViewById(R.id.sms_thread_progress_bar);
 		smsList = (ListView) v.findViewById(R.id.sms_thread_sms_list);
 		smsList.setOnItemClickListener(itemClickListener);
@@ -327,16 +341,10 @@ public class SmsConversation extends Fragment {
 		super.onActivityCreated(savedInstanceState);
 		act.bindService(new Intent(act, SendTaskService.class), connection,
 				Context.BIND_AUTO_CREATE);
-		smsThreadHandler.post(new Runnable() {
-			public void run() {
-				updateItems(true);
-				bar.setVisibility(View.GONE);
-				smsList.setVisibility(View.VISIBLE);
-				if (getArguments().getBoolean("send_now") && position == 0) {
-					sendFromMainScreen(items.get(items.size() - 1));
-				}
-			}
-		});
+		updateItems(true);
+		bar.setVisibility(View.GONE);
+		smsList.setVisibility(View.VISIBLE);
+		shouldSendMessage = getArguments().getBoolean("send_now");
 	}
 
 	protected void sendFromMainScreen(SmsModel smsModel) {
