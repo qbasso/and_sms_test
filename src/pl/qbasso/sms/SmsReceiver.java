@@ -195,7 +195,6 @@ public class SmsReceiver extends BroadcastReceiver {
 		ArrayList<ConversationModel> list = new ArrayList<ConversationModel>();
 		list.add(threadModel);
 		smsConversationIntent.putExtra(EXTRA_THREAD_LIST, list.toArray());
-
 		n.icon = R.drawable.ic_launcher;
 		n.defaults |= Notification.DEFAULT_VIBRATE | Notification.DEFAULT_SOUND;
 		n.flags |= Notification.FLAG_AUTO_CANCEL;

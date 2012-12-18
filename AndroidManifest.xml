@@ -74,6 +74,7 @@
             android:authorities="pl.qbasso.smsdb.SmsProvider"
             android:exported="false" >
         </provider>
+        <activity android:name="pl.qbasso.activities.ConversationListCb"></activity>
     </application>
 
 </manifest>

@@ -1,6 +1,5 @@
 package pl.qbassso.smsdb;
 
-import pl.qbasso.models.SmsModel;
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;

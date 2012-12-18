@@ -7,6 +7,7 @@ import java.util.UUID;
 import pl.qbasso.custom.BaseApplication;
 import pl.qbasso.custom.ContactsAdapter;
 import pl.qbasso.custom.ConversationAdapter;
+import pl.qbasso.custom.ConversationAdapterCb;
 import pl.qbasso.custom.SendTaskService;
 import pl.qbasso.custom.SlideHelper;
 import pl.qbasso.custom.Utils;
@@ -58,6 +59,7 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ViewFlipper;
 
 /**
  * The Class ConversationList.
@@ -126,6 +128,12 @@ public class ConversationList extends Activity { // implements
 
 	private NotificationManager mNotificationManager;
 
+	private ViewFlipper mViewFlipper;
+
+	private ListView mConversationListCb;
+
+	private ConversationAdapterCb mConversationAdapterCb;
+
 	/** The item long click listener. */
 	private OnItemLongClickListener itemLongClckListener = new OnItemLongClickListener() {
 
@@ -144,6 +152,14 @@ public class ConversationList extends Activity { // implements
 								actionAddContact(item);
 								arg0.dismiss();
 								break;
+							case 2:
+								mConversationAdapterCb = new ConversationAdapterCb(
+										ctx, R.layout.conversation_item_cb,
+										items);
+								mConversationListCb
+										.setAdapter(mConversationAdapterCb);
+								composeButton.setText("Usuñ");
+								mViewFlipper.setDisplayedChild(1);
 							default:
 								break;
 							}
@@ -177,15 +193,20 @@ public class ConversationList extends Activity { // implements
 	 *            conversation model
 	 */
 	private void actionDeleteThread(View v, final ConversationModel item) {
-		smsAccessor.deleteThread(item.getThreadId());
 		Animation anim = AnimationUtils.loadAnimation(ctx, R.anim.slide_right);
 		v.startAnimation(anim);
 		mainHandler.postDelayed(new Runnable() {
 			public void run() {
-				items.remove(item);
-				mConversationAdapter.notifyDataSetChanged();
+				removeConversation(item);
 			}
+
 		}, anim.getDuration());
+	}
+
+	private void removeConversation(final ConversationModel item) {
+		smsAccessor.deleteThread(item.getThreadId());
+		items.remove(item);
+		mConversationAdapter.notifyDataSetChanged();
 	}
 
 	/**
@@ -201,10 +222,6 @@ public class ConversationList extends Activity { // implements
 				break;
 			case SendTaskService.MESSAGE_QUEUE_NOT_EMPTY:
 				((Activity) ctx).moveTaskToBack(false);
-				// Intent startMain = new Intent(Intent.ACTION_MAIN);
-				// startMain.addCategory(Intent.CATEGORY_HOME);
-				// startMain.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-				// startActivity(startMain);
 				break;
 			default:
 				break;
@@ -348,11 +365,29 @@ public class ConversationList extends Activity { // implements
 	/** The compose button listener. */
 	private OnClickListener composeButtonListener = new OnClickListener() {
 		public void onClick(View v) {
-			if (!slideHelper.isMenuShown()) {
-				slideHelper.showMenu(false);
+			if (mViewFlipper.getDisplayedChild() == 1) {
+				//TODO it should be done in separate thread, remove big threads can take a while
+				removeSelectedThreads();
 			} else {
-				slideHelper.hideMenu(false);
+				if (!slideHelper.isMenuShown()) {
+					slideHelper.showMenu(false);
+				} else {
+					slideHelper.hideMenu(false);
+				}
 			}
+		}
+
+		private void removeSelectedThreads() {
+			boolean[] data = mConversationAdapterCb.getChecked();
+			mViewFlipper.setDisplayedChild(0);
+			showProgressDialog();
+			for (int i = 0; i<data.length; i++) {
+				if (data[i]) {
+					removeConversation(items.get(i));
+				}
+			}			
+			composeButton.setText("Nowa...");
+			pd.dismiss();
 		}
 	};
 
@@ -412,6 +447,10 @@ public class ConversationList extends Activity { // implements
 		smsThreadList = (ListView) findViewById(R.id.main_thread_list);
 		smsThreadList.setOnItemClickListener(smsThreadClickListener);
 		smsThreadList.setOnItemLongClickListener(itemLongClckListener);
+		mConversationListCb = (ListView) findViewById(R.id.main_thread_list_cb);
+		mViewFlipper = (ViewFlipper) findViewById(R.id.viewflip);
+		mViewFlipper.setInAnimation(ctx, android.R.anim.slide_in_left);
+		mViewFlipper.setOutAnimation(ctx, android.R.anim.slide_out_right);
 		if (AppConstants.DB == 1) {
 			smsAccessor = new SmsDbHelper(getContentResolver());
 		} else {
@@ -469,6 +508,9 @@ public class ConversationList extends Activity { // implements
 	public void onBackPressed() {
 		if (slideHelper.isMenuShown()) {
 			slideHelper.hideMenu(false);
+		} else if (mViewFlipper.getDisplayedChild() == 1) {
+			mViewFlipper.setDisplayedChild(0);
+			composeButton.setText("Nowa...");
 		} else {
 			if (isTaskRoot()) {
 				try {

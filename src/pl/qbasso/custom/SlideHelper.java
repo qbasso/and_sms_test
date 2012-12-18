@@ -48,7 +48,7 @@ public class SlideHelper {
 	public static int menuSizePx;
 
 	/** The content. */
-	private LinearLayout content;
+	private RelativeLayout content;
 
 	/** The menu. */
 	private LinearLayout menu;
@@ -122,7 +122,7 @@ public class SlideHelper {
 		this.mAct = act;
 		this.mMenuResId = menuResId;
 		menu = (LinearLayout) mAct.findViewById(R.id.main_menu);
-		content = (LinearLayout) mAct.findViewById(R.id.main_content);
+		content = (RelativeLayout) mAct.findViewById(R.id.main_content);
 		mActionBarContainer = (ViewGroup) mAct.findViewById(
 				android.R.id.content).getParent();
 		Rect r = new Rect();
