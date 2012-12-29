@@ -1,6 +1,7 @@
 package pl.qbasso.activities;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -83,7 +84,7 @@ public class ConversationList extends Activity { // implements
 	private ListView smsThreadList;
 
 	/** Holds conversation items */
-	private List<ConversationModel> items;
+	private volatile List<ConversationModel> items;
 
 	/** The ctx. */
 	private Context ctx;
@@ -131,6 +132,8 @@ public class ConversationList extends Activity { // implements
 	private ListView mConversationListCb;
 
 	private ConversationAdapter mConversationAdapterCb;
+
+	private Object mSyncObject = new Object();
 
 	/** The item long click listener. */
 	private OnItemLongClickListener itemLongClckListener = new OnItemLongClickListener() {
@@ -350,6 +353,7 @@ public class ConversationList extends Activity { // implements
 				smsThreadList.setOnItemClickListener(smsThreadClickListener);
 				smsThreadList.setAdapter(mConversationAdapter);
 				pd.dismiss();
+				updateConversationDetails();
 				break;
 			case 1:
 				mConversationAdapter.notifyDataSetChanged();
@@ -399,6 +403,8 @@ public class ConversationList extends Activity { // implements
 		}
 	};
 
+	protected boolean listDisplayed = false;
+
 	/**
 	 * Update items.
 	 * 
@@ -419,10 +425,6 @@ public class ConversationList extends Activity { // implements
 					items = Cache.getAll();
 				}
 				mainHandler.sendEmptyMessage(0);
-				for (ConversationModel model : items) {
-					smsAccessor.getDetailsForConversation(model);
-				}
-				mainHandler.sendEmptyMessage(1);
 			}
 		}).start();
 	}
@@ -446,6 +448,19 @@ public class ConversationList extends Activity { // implements
 		// getSupportLoaderManager().initLoader(0, null, this).forceLoad();
 		showProgressDialog();
 		updateItems(false);
+	}
+
+	private void updateConversationDetails() {
+		new Thread(new Runnable() {
+
+			public void run() {
+				for (ConversationModel model : items) {
+					smsAccessor.getDetailsForConversation(model);
+				}
+				mainHandler.sendEmptyMessage(1);
+
+			}
+		}).start();
 	}
 
 	private void initViewMembers() {

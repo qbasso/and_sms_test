@@ -25,6 +25,9 @@ public class Utils {
 	 * @return the string
 	 */
 	public static String formatDate(long date) {
+		if (date == 0) {
+			return "";
+		}
 		if (DateUtils.isToday(date)) {
 			return DateFormat.format("kk:mm", date).toString();
 		} else {
