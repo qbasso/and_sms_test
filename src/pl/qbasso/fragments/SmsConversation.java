@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import pl.qbasso.activities.AppConstants;
+import pl.qbasso.activities.DeleteMultipleSms;
 import pl.qbasso.activities.SendSms;
 import pl.qbasso.custom.SendTaskService;
 import pl.qbasso.custom.SmsAdapter;
@@ -97,6 +98,11 @@ public class SmsConversation extends Fragment {
 								dialog.dismiss();
 								startActivity(i);
 								break;
+							case 1:
+								Intent intent = new Intent(act, DeleteMultipleSms.class);
+								intent.putExtra("info", info);
+								startActivityForResult(intent, 0);
+								break;
 							default:
 								break;
 							}
@@ -155,7 +161,7 @@ public class SmsConversation extends Fragment {
 				}
 				break;
 			case SendTaskService.REGISTER:
-				if (shouldSendMessage && position == 0) {					
+				if (shouldSendMessage && position == 0) {
 					sendFromMainScreen(items.get(items.size() - 1));
 					shouldSendMessage = false;
 				}
@@ -250,7 +256,7 @@ public class SmsConversation extends Fragment {
 					b.putString(EXTRA_CLIENT_ID, clientId);
 					msg.setData(b);
 					mService.send(msg);
-				} catch (RemoteException e) {
+				} catch (RemoteException e) {// 618561357
 					e.printStackTrace();
 				}
 			} else {
@@ -276,6 +282,7 @@ public class SmsConversation extends Fragment {
 				p.show();
 			}
 		}
+
 	};
 
 	private OnMessageSendCompleteListener listener = new OnMessageSendCompleteListener() {
@@ -415,6 +422,21 @@ public class SmsConversation extends Fragment {
 					position);
 		}
 		super.onResume();
+	}
+
+	@Override
+	public void onActivityResult(int requestCode, int resultCode, Intent data) {
+		if (requestCode ==0 && resultCode == Activity.RESULT_OK) {
+			postDeleteMany(data);
+		}
+	}
+
+	private void postDeleteMany(Intent data) {
+		Cache.addToRefreshSet(info.getThreadId(), false);
+		if (data.getIntExtra("items_left", 0) == 0) {
+			act.finish();
+		}
+		updateItems(true);
 	}
 
 }

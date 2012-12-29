@@ -1,6 +1,3 @@
-/*
- * @author JPorzuczek
- */
 package pl.qbasso.custom;
 
 import java.util.List;
@@ -9,22 +6,22 @@ import pl.qbasso.interfaces.ItemSeenListener;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.smssender.R;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.os.Handler;
 import android.text.Html;
-import android.text.util.Linkify;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.view.ViewGroup.LayoutParams;
+import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-// TODO: Auto-generated Javadoc
-/**
- * The Class SmsAdapter.
- */
-public class SmsAdapter extends ArrayAdapter<SmsModel> {
+public class SmsAdapterSelectable extends ArrayAdapter<SmsModel> {
 
 	/** The items. */
 	private List<SmsModel> items;
@@ -59,6 +56,12 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 	/** The id. */
 	private int id;
 
+	private Handler adapterHandler = new Handler();
+
+	private boolean[] checked;
+
+	private Bitmap[] screenShots;
+
 	/** The context. */
 	private Context context;
 
@@ -72,7 +75,8 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 		/** The msg date. */
 		protected TextView msgDate;
 
-		protected ImageView msgStatus;
+		protected ImageView viewScreenshot;
+
 	}
 
 	/**
@@ -109,7 +113,8 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 	 * android.view.ViewGroup)
 	 */
 	@Override
-	public View getView(int position, View convertView, ViewGroup parent) {
+	public View getView(final int position, final View convertView,
+			final ViewGroup parent) {
 		SmsModel item = items.get(position);
 		View view = convertView;
 		if (item.getRead() == SmsModel.MESSAGE_NOT_READ) {
@@ -124,23 +129,21 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 			} else {
 				leftHolder = (LeftItemHolder) view.getTag();
 			}
-			leftHolder.msgBody.setAutoLinkMask(Linkify.ALL);
 			leftHolder.msgBody.setText(item.getBody());
-			//this enables custom handing of touch events in @LinkEnabledTextView
-			leftHolder.msgBody.setMovementMethod(null);
+			// this enables custom handing of touch events in
+			// @LinkEnabledTextView
 			leftHolder.msgDate.setText(Utils.formatDate(item.getDate()));
-			if (item.getStatus() == SmsModel.STATUS_WAITING) {
-				leftHolder.msgStatus.setImageResource(R.drawable.ic_launcher);
-				leftHolder.msgStatus.setVisibility(View.VISIBLE);
-				leftHolder.msgStatus.startAnimation(AnimationUtils
-						.loadAnimation(context, R.anim.shake));
+			if (checked[position] && screenShots[position] != null) {
+				leftHolder.background.setVisibility(View.GONE);
+				leftHolder.viewScreenshot.setImageBitmap(screenShots[position]);
+				leftHolder.viewScreenshot.setVisibility(View.VISIBLE);
+				leftHolder.viewScreenshot.setAlpha(128);
 			} else {
-				leftHolder.msgStatus.setAnimation(null);
-				leftHolder.msgStatus.setVisibility(View.GONE);
+				leftHolder.viewScreenshot.setVisibility(View.GONE);
+				leftHolder.background.setVisibility(View.VISIBLE);
 			}
 			break;
 		case RIGHT:
-			view = convertView;
 			if (convertView == null) {
 				view = inflater.inflate(rightItemResource, null);
 				initializeRightHolder(view);
@@ -148,23 +151,73 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 			} else {
 				rightHolder = (RightItemHolder) view.getTag();
 			}
-			rightHolder.msgBody.setAutoLinkMask(Linkify.ALL);
 			rightHolder.msgBody.setText(Html.fromHtml(getContext().getString(
 					R.string.message_body, displayName, item.getBody())));
-			rightHolder.msgBody.setMovementMethod(null);
 			rightHolder.msgDate.setText(Utils.formatDate(item.getDate()));
-			if (item.getStatus() == SmsModel.STATUS_WAITING) {
-				rightHolder.msgStatus.setImageResource(R.drawable.ic_launcher);
-				rightHolder.msgStatus.setVisibility(View.VISIBLE);
-				rightHolder.background.startAnimation(AnimationUtils
-						.loadAnimation(context, R.anim.shake));
+			if (checked[position] && screenShots[position] != null) {
+				rightHolder.background.setVisibility(View.GONE);
+				rightHolder.viewScreenshot
+						.setImageBitmap(screenShots[position]);
+				rightHolder.viewScreenshot.setVisibility(View.VISIBLE);
+				rightHolder.viewScreenshot.setAlpha(128);
 			} else {
-				rightHolder.msgStatus.setVisibility(View.GONE);
-				rightHolder.background.setAnimation(null);
+				rightHolder.viewScreenshot.setVisibility(View.GONE);
+				rightHolder.background.setVisibility(View.VISIBLE);
 			}
 			break;
 		}
+
+		view.setOnClickListener(new OnClickListener() {
+			public void onClick(View v) {
+				Animation a = AnimationUtils.loadAnimation(context,
+						R.anim.shrink_sms);
+				if (!checked[position]) {
+					screenShots[position] = getViewScreenshot(v);
+					// v.setAnimation(a);
+					// hideViews((ViewGroup) v, View.GONE);
+					// ((ViewGroup) v).addView(screenShots[position], 0);
+					checked[position] = true;
+				} else {
+					// hideViews((ViewGroup) v, View.VISIBLE);
+					// ((ViewGroup) v).removeViewAt(0);
+					checked[position] = false;
+					screenShots[position] = null;
+				}
+				// final View convertView = v;
+				// adapterHandler.postDelayed(new Runnable() {
+				//
+				// public void run() {
+				getView(position, v, parent);
+				//
+				// }
+				// }, a.getDuration());
+			}
+		});
 		return view;
+	}
+
+	private Bitmap getViewScreenshot(View view) {
+		view.setDrawingCacheEnabled(true);
+		Bitmap b = Bitmap.createScaledBitmap(view.getDrawingCache(),
+				(int) (0.9 * view.getMeasuredWidth()),
+				(int) (0.9 * view.getMeasuredHeight()), false);
+		view.setDrawingCacheEnabled(false);
+		return b;
+	}
+
+	private void hideViews(ViewGroup v, int visibility) {
+		int childCount = v.getChildCount();
+		for (int i = 0; i < childCount; i++) {
+			View temp = v.getChildAt(i);
+			if (temp instanceof ViewGroup) {
+				hideViews((ViewGroup) temp, visibility);
+			}
+			if ((temp instanceof ImageView && visibility == View.VISIBLE)) {
+				;
+			} else {
+				temp.setVisibility(visibility);
+			}
+		}
 	}
 
 	/**
@@ -180,8 +233,8 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 		leftHolder.msgDate = (TextView) view.findViewById(R.id.sms_item_date);
 		leftHolder.background = (LinearLayout) view
 				.findViewById(R.id.left_item_background);
-		leftHolder.msgStatus = (ImageView) view
-				.findViewById(R.id.sms_item_status);
+		leftHolder.viewScreenshot = (ImageView) view
+				.findViewById(R.id.screenShot);
 	}
 
 	/**
@@ -198,8 +251,8 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 		rightHolder.msgDate = (TextView) view.findViewById(R.id.sms_item_date);
 		rightHolder.background = (LinearLayout) view
 				.findViewById(R.id.right_item_background);
-		rightHolder.msgStatus = (ImageView) view
-				.findViewById(R.id.sms_item_status);
+		rightHolder.viewScreenshot = (ImageView) view
+				.findViewById(R.id.screenShot);
 	}
 
 	/*
@@ -237,7 +290,7 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 	 * @param position
 	 *            the position
 	 */
-	public SmsAdapter(Context context, int leftItemResource,
+	public SmsAdapterSelectable(Context context, int leftItemResource,
 			int rightItemResource, List<SmsModel> objects, String displayName,
 			int position) {
 		super(context, leftItemResource, objects);
@@ -245,6 +298,12 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 		this.leftItemResource = leftItemResource;
 		this.rightItemResource = rightItemResource;
 		items = objects;
+		checked = new boolean[items.size()];
+		screenShots = new Bitmap[items.size()];
+		for (int i = 0; i < items.size(); i++) {
+			checked[i] = false;
+			screenShots[i] = null;
+		}
 		this.displayName = displayName;
 		this.id = position;
 		this.context = context;
@@ -256,5 +315,9 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 
 	public void setItems(List<SmsModel> items) {
 		this.items = items;
+	}
+
+	public boolean[] getChecked() {
+		return checked;
 	}
 }

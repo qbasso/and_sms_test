@@ -47,10 +47,16 @@
                 android:layout_gravity="center"
                 android:layout_marginLeft="8dp"
                 android:layout_marginRight="8dp"
-                android:src="@drawable/ic_launcher"
-                android:visibility="visible" >
+                android:visibility="invisible" >
             </ImageView>
         </LinearLayout>
     </LinearLayout>
+
+    <ImageView
+        android:id="@+id/screenShot"
+        android:visibility="gone"
+        android:alpha="0.5"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
 </RelativeLayout>

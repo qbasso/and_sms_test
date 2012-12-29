@@ -46,4 +46,6 @@ public interface ISmsAccess {
 
 	public abstract int getUnreadCount();
 
+	public abstract void getDetailsForConversation(ConversationModel m);
+
 }

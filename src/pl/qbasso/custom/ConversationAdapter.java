@@ -12,9 +12,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 
 // TODO: Auto-generated Javadoc
 /**
@@ -37,6 +40,10 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 	/** The ctx. */
 	private Context ctx;
 
+	private boolean checked[];
+
+	private boolean mCbEnabled;
+
 	/**
 	 * The Class ItemViewHolder.
 	 */
@@ -58,6 +65,8 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 
 		/** The unread icon. */
 		RelativeLayout unreadIcon;
+
+		CheckBox cb;
 	}
 
 	@Override
@@ -82,7 +91,7 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 	 * android.view.ViewGroup)
 	 */
 	@Override
-	public View getView(int position, View convertView, ViewGroup parent) {
+	public View getView(final int position, View convertView, ViewGroup parent) {
 		View view = convertView;
 		ConversationModel item;
 		if (convertView == null) {
@@ -99,12 +108,6 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 			holder.date.setText(Utils.formatDate(item.getLastModified()));
 			holder.messageSnippet.setText(item.isDraft() ? "Robocza: "
 					+ item.getSnippet() : item.getSnippet());
-			if (item.getUnread() > 0) {
-				holder.unreadCount.setText(String.valueOf(item.getUnread()));
-				holder.unreadIcon.setVisibility(View.VISIBLE);
-			} else {
-				holder.unreadIcon.setVisibility(View.GONE);
-			}
 			if (position == 0) {
 				holder.background
 						.setBackgroundResource(R.drawable.item_rounded_top_selector);
@@ -114,6 +117,28 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 			} else {
 				holder.background
 						.setBackgroundResource(R.drawable.item_normal_selector);
+			}
+			if (mCbEnabled) {
+				holder.cb
+						.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+							public void onCheckedChanged(
+									CompoundButton buttonView, boolean isChecked) {
+								checked[position] = isChecked;
+							}
+						});
+				if (checked[position]) {
+					holder.cb.setChecked(true);
+				} else {
+					holder.cb.setChecked(false);
+				}
+			} else {
+				if (item.getUnread() > 0) {
+					holder.unreadCount
+							.setText(String.valueOf(item.getUnread()));
+					holder.unreadIcon.setVisibility(View.VISIBLE);
+				} else {
+					holder.unreadIcon.setVisibility(View.GONE);
+				}
 			}
 		}
 		return view;
@@ -138,6 +163,9 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 		holder.unreadIcon = (RelativeLayout) view
 				.findViewById(R.id.thread_item_unread_icon);
 		holder.date = (TextView) view.findViewById(R.id.thread_item_date);
+		if (mCbEnabled) {
+			holder.cb = (CheckBox) view.findViewById(R.id.checkbox);
+		}
 	}
 
 	/**
@@ -151,13 +179,24 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel> {
 	 *            the objects
 	 */
 	public ConversationAdapter(Context context, int textViewResourceId,
-			List<ConversationModel> objects) {
+			List<ConversationModel> objects, boolean selectable) {
 		super(context, textViewResourceId, objects);
 		this.resourceId = textViewResourceId;
 		this.items = objects;
+		this.mCbEnabled = selectable;
+		if (selectable) {
+			this.checked = new boolean[objects.size()];
+			for (int i = 0; i < checked.length; i++) {
+				checked[i] = false;
+			}
+		}
 		this.inflater = (LayoutInflater) context
 				.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 		this.ctx = context;
+	}
+
+	public boolean[] getChecked() {
+		return checked;
 	}
 
 }

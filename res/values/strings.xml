@@ -22,6 +22,7 @@
     </string-array>
     <string-array name="message_actions">
         <item>Prześlij</item>
+        <item>Usuń wiele</item>
     </string-array>
 
     <color name="red">#AAFF0000</color>

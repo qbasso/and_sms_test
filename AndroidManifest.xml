@@ -75,6 +75,7 @@
             android:exported="false" >
         </provider>
         <activity android:name="pl.qbasso.activities.ConversationListCb"></activity>
+        <activity android:name="pl.qbasso.activities.DeleteMultipleSms"></activity>
     </application>
 
 </manifest>

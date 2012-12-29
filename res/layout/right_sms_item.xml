@@ -43,5 +43,12 @@
             android:visibility="gone" >
         </ImageView>
     </LinearLayout>
+    
+    <ImageView
+        android:id="@+id/screenShot"
+        android:layout_width="match_parent"
+        android:visibility="gone"
+        android:alpha="1"
+        android:layout_height="match_parent" />
 
 </RelativeLayout>

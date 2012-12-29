@@ -194,12 +194,8 @@ public class SmsDbHelper implements ISmsAccess  {
 				ConversationModel m = new ConversationModel(c.getLong(0),
 						c.getInt(1), c.getString(2));
 				String phoneNumber = getPhoneNumber(m.getThreadId());
-				getLastModified(m);
-				getUnreadCount(m);
-				checkForDraft(m);
-				String displayName = getDisplayName(phoneNumber);
 				m.setAddress(phoneNumber);
-				m.setDisplayName(getThreadDisplayName(phoneNumber, displayName));
+				m.setDisplayName(phoneNumber);
 				result.add(m);
 			}
 			c.close();
@@ -207,7 +203,15 @@ public class SmsDbHelper implements ISmsAccess  {
 		return result;
 	}
 
-	private void getLastModified(ConversationModel m) {
+	public void getDetailsForConversation(ConversationModel m) {
+		getLastModified(m);
+		getUnreadCount(m);
+		checkForDraft(m);
+		String displayName = getDisplayName(m.getAddress());
+		m.setDisplayName(getThreadDisplayName(m.getAddress(), displayName));
+	}
+
+	public void getLastModified(ConversationModel m) {
 		Cursor c = resolver.query(SMS_URI, new String[] { SmsModel.DATE },
 				SmsModel.THREAD_ID + "= ?",
 				new String[] { String.valueOf(m.getThreadId()) },
@@ -269,7 +273,7 @@ public class SmsDbHelper implements ISmsAccess  {
 	 *            the m
 	 * @return the unread count
 	 */
-	private void getUnreadCount(ConversationModel m) {
+	public void getUnreadCount(ConversationModel m) {
 		Cursor c1;
 		c1 = resolver.query(
 				SMS_URI,

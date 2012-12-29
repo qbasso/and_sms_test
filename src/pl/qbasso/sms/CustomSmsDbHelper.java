@@ -490,4 +490,9 @@ public class CustomSmsDbHelper implements ISmsAccess {
 		return result;
 	}
 
+	public void getDetailsForConversation(ConversationModel m) {
+		// TODO Auto-generated method stub
+		
+	}
+
 }

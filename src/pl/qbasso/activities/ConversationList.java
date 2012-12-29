@@ -4,10 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import pl.qbasso.custom.BaseApplication;
 import pl.qbasso.custom.ContactsAdapter;
 import pl.qbasso.custom.ConversationAdapter;
-import pl.qbasso.custom.ConversationAdapterCb;
 import pl.qbasso.custom.SendTaskService;
 import pl.qbasso.custom.SlideHelper;
 import pl.qbasso.custom.Utils;
@@ -132,7 +130,7 @@ public class ConversationList extends Activity { // implements
 
 	private ListView mConversationListCb;
 
-	private ConversationAdapterCb mConversationAdapterCb;
+	private ConversationAdapter mConversationAdapterCb;
 
 	/** The item long click listener. */
 	private OnItemLongClickListener itemLongClckListener = new OnItemLongClickListener() {
@@ -153,9 +151,9 @@ public class ConversationList extends Activity { // implements
 								arg0.dismiss();
 								break;
 							case 2:
-								mConversationAdapterCb = new ConversationAdapterCb(
+								mConversationAdapterCb = new ConversationAdapter(
 										ctx, R.layout.conversation_item_cb,
-										items);
+										items, true);
 								mConversationListCb
 										.setAdapter(mConversationAdapterCb);
 								composeButton.setText("Usuñ");
@@ -345,11 +343,20 @@ public class ConversationList extends Activity { // implements
 	private Handler mainHandler = new Handler() {
 		@Override
 		public void handleMessage(Message m) {
-			mConversationAdapter = new ConversationAdapter(ctx,
-					R.layout.conversation_item, items);
-			smsThreadList.setOnItemClickListener(smsThreadClickListener);
-			smsThreadList.setAdapter(mConversationAdapter);
-			pd.dismiss();
+			switch (m.what) {
+			case 0:
+				mConversationAdapter = new ConversationAdapter(ctx,
+						R.layout.conversation_item, items, false);
+				smsThreadList.setOnItemClickListener(smsThreadClickListener);
+				smsThreadList.setAdapter(mConversationAdapter);
+				pd.dismiss();
+				break;
+			case 1:
+				mConversationAdapter.notifyDataSetChanged();
+				break;
+			default:
+				break;
+			}
 		}
 	};
 
@@ -366,7 +373,8 @@ public class ConversationList extends Activity { // implements
 	private OnClickListener composeButtonListener = new OnClickListener() {
 		public void onClick(View v) {
 			if (mViewFlipper.getDisplayedChild() == 1) {
-				//TODO it should be done in separate thread, remove big threads can take a while
+				// TODO it should be done in separate thread, remove big threads
+				// can take a while
 				removeSelectedThreads();
 			} else {
 				if (!slideHelper.isMenuShown()) {
@@ -381,11 +389,11 @@ public class ConversationList extends Activity { // implements
 			boolean[] data = mConversationAdapterCb.getChecked();
 			mViewFlipper.setDisplayedChild(0);
 			showProgressDialog();
-			for (int i = 0; i<data.length; i++) {
+			for (int i = 0; i < data.length; i++) {
 				if (data[i]) {
 					removeConversation(items.get(i));
 				}
-			}			
+			}
 			composeButton.setText("Nowa...");
 			pd.dismiss();
 		}
@@ -411,6 +419,10 @@ public class ConversationList extends Activity { // implements
 					items = Cache.getAll();
 				}
 				mainHandler.sendEmptyMessage(0);
+				for (ConversationModel model : items) {
+					smsAccessor.getDetailsForConversation(model);
+				}
+				mainHandler.sendEmptyMessage(1);
 			}
 		}).start();
 	}
