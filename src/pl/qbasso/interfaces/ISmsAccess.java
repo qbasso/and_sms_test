@@ -9,7 +9,7 @@ import android.net.Uri;
 
 public interface ISmsAccess {
 
-	public abstract int updateSmsStatus(Uri u, int smsStatus, int smsType);
+	public abstract int updateSmsStatus(long messageId, int smsStatus, int smsType);
 
 	public abstract Uri insertSms(SmsModel m);
 

@@ -175,6 +175,9 @@ public class SmsProvider extends ContentProvider {
 		switch (sMatcher.match(arg0)) {
 		case SMS_CODE:
 			newId = db.insert(SmsDatabaseHelper.SMS_TABLE_NAME, null, v);
+//			if (v.getAsInteger(SmsModel.TYPE) == SmsModel.MESSAGE_TYPE_INBOX) {
+//				db.execSQL("update ")
+//			}
 			if (newId > -1) {
 				u = Uri.withAppendedPath(SMS_URI, String.valueOf(newId));
 			}

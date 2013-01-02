@@ -3,7 +3,6 @@
  */
 package pl.qbasso.sms;
 
-
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -22,7 +21,7 @@ import android.provider.ContactsContract.PhoneLookup;
 /**
  * The Class SmsDbHelper.
  */
-public class SmsDbHelper implements ISmsAccess  {
+public class SmsDbHelper implements ISmsAccess {
 
 	/** The Constant SMS_URI. */
 	public static final Uri SMS_URI = Uri.parse("content://sms");
@@ -34,7 +33,7 @@ public class SmsDbHelper implements ISmsAccess  {
 	public static final Uri SMS_DRAFT_URI = Uri.parse("content://sms/draft");
 	/** The Constant SMS_CONVERSATIONS_URI. */
 	public static final Uri SMS_CONVERSATIONS_URI = Uri
-				.parse("content://sms/conversations");
+			.parse("content://sms/conversations");
 	/** The Constant SMS_SORT_ORDER. */
 	public static final String SMS_SORT_ORDER = "date DESC";
 	/** The resolver. */
@@ -44,20 +43,27 @@ public class SmsDbHelper implements ISmsAccess  {
 		this.resolver = r;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#updateSmsStatus(android.net.Uri, int, int)
 	 */
-	public int updateSmsStatus(Uri u, int smsStatus, int smsType) {
+	public int updateSmsStatus(long messageId, int smsStatus, int smsType) {
 		int result;
 		ContentValues values = new ContentValues();
 		values.put(SmsModel.STATUS, smsStatus);
 		values.put(SmsModel.TYPE, smsType);
-		result = resolver.update(u, values, null, null);
+		result = resolver.update(
+				Uri.withAppendedPath(SMS_URI, Long.toString(messageId)), values,
+				null, null);
 		return result;
 	}
 
-	/* (non-Javadoc)
-	 * @see pl.qbasso.sms.ISmsAccess#insertSms(android.net.Uri, pl.qbasso.models.SmsModel)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see pl.qbasso.sms.ISmsAccess#insertSms(android.net.Uri,
+	 * pl.qbasso.models.SmsModel)
 	 */
 	public Uri insertSms(SmsModel m) {
 		ContentValues values = new ContentValues();
@@ -76,7 +82,9 @@ public class SmsDbHelper implements ISmsAccess  {
 		return resolver.insert(SMS_URI, values);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getThreadIdForSmsUri(android.net.Uri)
 	 */
 	public long getThreadIdForSmsUri(Uri u) {
@@ -91,7 +99,9 @@ public class SmsDbHelper implements ISmsAccess  {
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getThreadIdForPhoneNumber(java.lang.String)
 	 */
 	public long getThreadIdForPhoneNumber(String phoneNumber) {
@@ -106,8 +116,11 @@ public class SmsDbHelper implements ISmsAccess  {
 		return result;
 	}
 
-	/* (non-Javadoc)
-	 * @see pl.qbasso.sms.ISmsAccess#getAddressForThreadId(java.lang.String, java.lang.String)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see pl.qbasso.sms.ISmsAccess#getAddressForThreadId(java.lang.String,
+	 * java.lang.String)
 	 */
 	public String getAddressForThreadId(String phoneNumber, String displayName) {
 		if (displayName == null) {
@@ -134,7 +147,9 @@ public class SmsDbHelper implements ISmsAccess  {
 		}
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getDisplayName(java.lang.String)
 	 */
 	public String getDisplayName(String phoneNumber) {
@@ -174,7 +189,9 @@ public class SmsDbHelper implements ISmsAccess  {
 		return phoneNumber;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getThreads(java.util.HashSet)
 	 */
 	public List<ConversationModel> getThreads(HashSet<Long> needRefresh) {
@@ -289,7 +306,9 @@ public class SmsDbHelper implements ISmsAccess  {
 		}
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getSmsForThread(long)
 	 */
 	public List<SmsModel> getSmsForThread(long threadId) {
@@ -315,7 +334,9 @@ public class SmsDbHelper implements ISmsAccess  {
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getSingleSms(android.net.Uri)
 	 */
 	public SmsModel getSingleSms(Uri u) {
@@ -335,7 +356,9 @@ public class SmsDbHelper implements ISmsAccess  {
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#deleteThread(long)
 	 */
 	public void deleteThread(long threadId) {
@@ -345,7 +368,9 @@ public class SmsDbHelper implements ISmsAccess  {
 		// new String[] { String.valueOf(threadId) });
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#deleteSms(android.net.Uri, long)
 	 */
 	public void deleteSms(long smsId) {
@@ -353,7 +378,9 @@ public class SmsDbHelper implements ISmsAccess  {
 				new String[] { String.valueOf(smsId) });
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#updateSmsRead(long, int)
 	 */
 	public int updateSmsRead(long id, int messageRead) {
@@ -361,12 +388,14 @@ public class SmsDbHelper implements ISmsAccess  {
 		Uri u = Uri.withAppendedPath(SMS_URI, String.valueOf(id));
 		ContentValues v = new ContentValues();
 		v.put(SmsModel.READ, messageRead);
-	
+
 		result = resolver.update(u, v, null, null);
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getDraftIdForThread(long)
 	 */
 	public long getDraftIdForThread(long threadId) {
@@ -385,7 +414,9 @@ public class SmsDbHelper implements ISmsAccess  {
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getDraftTextForThread(long)
 	 */
 	public String getDraftTextForThread(long threadId) {
@@ -404,8 +435,11 @@ public class SmsDbHelper implements ISmsAccess  {
 		return result;
 	}
 
-	/* (non-Javadoc)
-	 * @see pl.qbasso.sms.ISmsAccess#updateDraftMessage(long, java.lang.String, long)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see pl.qbasso.sms.ISmsAccess#updateDraftMessage(long, java.lang.String,
+	 * long)
 	 */
 	public int updateDraftMessage(long msgId, String body, long date) {
 		int result = 0;
@@ -419,7 +453,9 @@ public class SmsDbHelper implements ISmsAccess  {
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#deleteDraftForThread(long)
 	 */
 	public int deleteDraftForThread(long threadId) {
@@ -432,7 +468,9 @@ public class SmsDbHelper implements ISmsAccess  {
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getMessagesNotSent()
 	 */
 	public List<SmsModel> getMessagesNotSent() {
@@ -455,7 +493,9 @@ public class SmsDbHelper implements ISmsAccess  {
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#getUnreadCount()
 	 */
 	public int getUnreadCount() {

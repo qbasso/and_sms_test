@@ -164,7 +164,8 @@ public class SmsConversationActivity extends FragmentActivity implements
 			AlarmManager am = (AlarmManager) ctx
 					.getSystemService(Activity.ALARM_SERVICE);
 			Intent intent = new Intent(SmsReceiver.ACTION_CANCEL_LIGHT);
-			am.cancel(PendingIntent.getBroadcast(ctx, 0, intent, 0));
+			am.cancel(PendingIntent.getBroadcast(ctx, 0, intent,
+					PendingIntent.FLAG_UPDATE_CURRENT));
 		}
 		Object[] l = (Object[]) getIntent().getSerializableExtra(
 				EXTRA_CONVERSATION_LIST);

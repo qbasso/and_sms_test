@@ -1,9 +1,8 @@
 package pl.qbasso.activities;
 
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import pl.qbasso.custom.ContactsAdapter;
 import pl.qbasso.custom.ConversationAdapter;
@@ -68,7 +67,6 @@ import android.widget.ViewFlipper;
 public class ConversationList extends Activity { // implements
 													// LoaderCallbacks<List<ConversationModel>>
 													// {
-
 	/**
 	 * The Constant EXTRA_CLIENT_ID. Used when passing intent extra client id to
 	 * message sending service
@@ -84,7 +82,7 @@ public class ConversationList extends Activity { // implements
 	private ListView smsThreadList;
 
 	/** Holds conversation items */
-	private volatile List<ConversationModel> items;
+	private volatile CopyOnWriteArrayList<ConversationModel> items;
 
 	/** The ctx. */
 	private Context ctx;
@@ -258,7 +256,6 @@ public class ConversationList extends Activity { // implements
 			String body = messageInput.getText().toString();
 			sendMessageFromMainScreen(Utils.getPhoneNumber(sender), body);
 		}
-
 	};
 
 	/** The update receiver. */
@@ -417,12 +414,13 @@ public class ConversationList extends Activity { // implements
 				if (!refresh) {
 					Cache.getInstance();
 					Cache.putAll(smsAccessor.getThreads(null));
-					items = Cache.getAll();
+					items = (CopyOnWriteArrayList<ConversationModel>) Cache
+							.getAll();
 				} else {
 					Cache.putInOrder(smsAccessor.getThreads(Cache
 							.getRefreshList()));
 					Cache.clearRefreshSet();
-					items = Cache.getAll();
+					items = (CopyOnWriteArrayList<ConversationModel>) Cache.getAll();
 				}
 				mainHandler.sendEmptyMessage(0);
 			}
@@ -442,7 +440,7 @@ public class ConversationList extends Activity { // implements
 		if (getIntent().getBooleanExtra(EXTRA_CANCEL_ALARM, false)) {
 			((AlarmManager) getSystemService(ALARM_SERVICE))
 					.cancel(PendingIntent.getBroadcast(this, 0, new Intent(
-							SmsReceiver.ACTION_CANCEL_LIGHT), 0));
+							SmsReceiver.ACTION_CANCEL_LIGHT), PendingIntent.FLAG_UPDATE_CURRENT));
 		}
 		initViewMembers();
 		// getSupportLoaderManager().initLoader(0, null, this).forceLoad();

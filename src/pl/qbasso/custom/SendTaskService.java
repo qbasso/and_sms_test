@@ -155,10 +155,8 @@ public class SendTaskService extends Service {
 		data.putSerializable(SmsSendHelper.EXTRA_MESSAGE, smsModel);
 		data.putInt(EXTRA_POSITION, b.getInt(EXTRA_POSITION));
 		try {
-			mDbHelper.updateSmsStatus(
-					Uri.withAppendedPath(SmsDbHelper.SMS_URI,
-							String.valueOf(smsModel.getId())),
-					SmsModel.STATUS_NONE, SmsModel.MESSAGE_TYPE_QUEUED);
+			mDbHelper.updateSmsStatus(smsModel.getId(), SmsModel.STATUS_NONE,
+					SmsModel.MESSAGE_TYPE_QUEUED);
 			smsModel.setStatus(SmsModel.STATUS_NONE);
 			smsModel.setSmsType(SmsModel.MESSAGE_TYPE_QUEUED);
 			toSend = Message.obtain(null, COMPLETE_MESSAGE);
@@ -237,7 +235,7 @@ public class SendTaskService extends Service {
 				"Message %s:%s queued. Queued messages: %d",
 				message.getAddressDisplayName() != null ? message
 						.getAddressDisplayName() : message.getAddress(),
-						message.getBody(), mMessageQueue.size()));
+				message.getBody(), mMessageQueue.size()));
 		timer.start();
 	}
 

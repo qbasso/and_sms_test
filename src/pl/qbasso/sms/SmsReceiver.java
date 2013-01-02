@@ -229,7 +229,7 @@ public class SmsReceiver extends BroadcastReceiver {
 			AlarmManager am = (AlarmManager) ctx
 					.getSystemService(Activity.ALARM_SERVICE);
 			am.set(AlarmManager.RTC,
-					System.currentTimeMillis() + 1000 * 3 * 60,
+					System.currentTimeMillis() + 1000 * 15,
 					cancelLightIntent);
 			n.flags |= Notification.FLAG_SHOW_LIGHTS;
 			n.ledARGB = 0x004800ff;

@@ -40,12 +40,14 @@ public class CustomSmsDbHelper implements ISmsAccess {
 	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#updateSmsStatus(android.net.Uri, int, int)
 	 */
-	public int updateSmsStatus(Uri u, int smsStatus, int smsType) {
+	public int updateSmsStatus(long messageId, int smsStatus, int smsType) {
 		int result;
 		ContentValues values = new ContentValues();
 		values.put(SmsProvider.COLUMN_SMS_STATUS, smsStatus);
 		values.put(SmsProvider.COLUMN_SMS_TYPE, smsType);
-		result = resolver.update(u, values, null, null);
+		result = resolver.update(
+				Uri.withAppendedPath(SMS_URI, Long.toString(messageId)),
+				values, null, null);
 		return result;
 	}
 
@@ -149,15 +151,17 @@ public class CustomSmsDbHelper implements ISmsAccess {
 	public String getDisplayName(String phoneNumber) {
 		String displayName = phoneNumber;
 		Cursor c;
-		Uri uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI,
-				Uri.encode(phoneNumber));
-		c = resolver.query(uri, new String[] { PhoneLookup.DISPLAY_NAME },
-				null, null, null);
-		if (c != null) {
-			if (c.moveToNext()) {
-				displayName = c.getString(0);
+		if (!phoneNumber.equals("")) {
+			Uri uri = Uri.withAppendedPath(PhoneLookup.CONTENT_FILTER_URI,
+					Uri.encode(phoneNumber));
+			c = resolver.query(uri, new String[] { PhoneLookup.DISPLAY_NAME },
+					null, null, null);
+			if (c != null) {
+				if (c.moveToNext()) {
+					displayName = c.getString(0);
+				}
+				c.close();
 			}
-			c.close();
 		}
 		return displayName;
 	}
@@ -203,7 +207,7 @@ public class CustomSmsDbHelper implements ISmsAccess {
 		}
 		if (c != null) {
 			while (c.moveToNext()) {
-				
+
 				ConversationModel m = new ConversationModel(
 						c.getLong(SmsProvider.sSmsProjectionMap
 								.get(SmsProvider.COLUMN_CONVERSATION_ID)),
@@ -285,18 +289,23 @@ public class CustomSmsDbHelper implements ISmsAccess {
 
 	public List<SmsModel> getAllSms() {
 		List<SmsModel> result = new ArrayList<SmsModel>();
-		Cursor c = resolver.query(SMS_URI, new String[] {
-				SmsProvider.COLUMN_SMS_ID, SmsProvider.COLUMN_SMS_BODY,
-				SmsProvider.COLUMN_SMS_ADDRESS, SmsProvider.COLUMN_SMS_DATE,
-				SmsProvider.COLUMN_SMS_TYPE, SmsProvider.COLUMN_SMS_READ,
-				SmsProvider.COLUMN_SMS_STATUS, SmsProvider.COLUMN_SMS_THREAD_ID }, SmsModel.TYPE + " <> ?",
+		Cursor c = resolver.query(SMS_URI,
+				new String[] { SmsProvider.COLUMN_SMS_ID,
+						SmsProvider.COLUMN_SMS_BODY,
+						SmsProvider.COLUMN_SMS_ADDRESS,
+						SmsProvider.COLUMN_SMS_DATE,
+						SmsProvider.COLUMN_SMS_TYPE,
+						SmsProvider.COLUMN_SMS_READ,
+						SmsProvider.COLUMN_SMS_STATUS,
+						SmsProvider.COLUMN_SMS_THREAD_ID }, SmsModel.TYPE
+						+ " <> ?",
 				new String[] { String.valueOf(SmsModel.MESSAGE_TYPE_DRAFT) },
 				"date ASC");
 		if (c != null) {
 			while (c.moveToNext()) {
-				result.add(new SmsModel(c.getLong(0), c.getLong(7), c.getString(2),
-						"", c.getLong(3), c.getString(1), c.getInt(4), c
-								.getInt(5), c.getInt(6)));
+				result.add(new SmsModel(c.getLong(0), c.getLong(7), c
+						.getString(2), "", c.getLong(3), c.getString(1), c
+						.getInt(4), c.getInt(5), c.getInt(6)));
 			}
 			c.close();
 		}
@@ -333,8 +342,7 @@ public class CustomSmsDbHelper implements ISmsAccess {
 	 * @see pl.qbasso.sms.ISmsAccess#deleteThread(long)
 	 */
 	public void deleteThread(long threadId) {
-		// TODO change constants
-		resolver.delete(SMS_URI, SmsModel.THREAD_ID + "=?",
+		resolver.delete(SMS_CONVERSATIONS_URI, SmsModel.ID + "=?",
 				new String[] { String.valueOf(threadId) });
 	}
 
@@ -491,8 +499,7 @@ public class CustomSmsDbHelper implements ISmsAccess {
 	}
 
 	public void getDetailsForConversation(ConversationModel m) {
-		// TODO Auto-generated method stub
-		
 	}
+	
 
 }

@@ -80,8 +80,8 @@ public final class R {
         public static final int sms_thread_sms_send_button=0x7f0a0020;
         public static final int thread_item_background=0x7f0a0003;
         public static final int thread_item_contact_name=0x7f0a0004;
-        public static final int thread_item_date=0x7f0a0005;
-        public static final int thread_item_last_message=0x7f0a0006;
+        public static final int thread_item_date=0x7f0a0006;
+        public static final int thread_item_last_message=0x7f0a0005;
         public static final int thread_item_unread_count=0x7f0a0008;
         public static final int thread_item_unread_icon=0x7f0a0007;
         public static final int top_bar=0x7f0a000c;

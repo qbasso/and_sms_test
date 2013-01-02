@@ -1,12 +1,11 @@
 package pl.qbasso.sms;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import pl.qbasso.models.ConversationModel;
 
@@ -14,7 +13,7 @@ public class Cache {
 	private static Cache instance = new Cache();
 	private static LinkedHashMap<Long, Integer> sPositions;
 	private static LinkedHashMap<Long, Boolean> sRefreshType;
-	private static ArrayList<ConversationModel> sConversations;
+	private static List<ConversationModel> sConversations;
 	private static HashSet<Long> sNeedRefresh;
 
 	public static Cache getInstance() {
@@ -22,7 +21,7 @@ public class Cache {
 	}
 
 	private Cache() {
-		sConversations = new ArrayList<ConversationModel>();
+		sConversations = new CopyOnWriteArrayList<ConversationModel>();
 		sNeedRefresh = new LinkedHashSet<Long>();
 		sPositions = new LinkedHashMap<Long, Integer>();
 		sRefreshType = new LinkedHashMap<Long, Boolean>();

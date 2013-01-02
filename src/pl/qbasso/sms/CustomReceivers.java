@@ -107,9 +107,7 @@ public class CustomReceivers {
 					.getSerializableExtra(SmsSendHelper.EXTRA_MESSAGE);
 			// Intent updateIntent = new Intent(SmsSendHelper.ACTION_UPDATE);
 			m.setSmsType(SmsModel.MESSAGE_TYPE_FAILED);
-			smsAccessor.updateSmsStatus(
-					Uri.withAppendedPath(SmsDbHelper.SMS_URI,
-							String.valueOf(m.getId())), SmsModel.STATUS_NONE,
+			smsAccessor.updateSmsStatus(m.getId(), SmsModel.STATUS_NONE,
 					SmsModel.MESSAGE_TYPE_FAILED);
 			// TODO probably update intent needed here as well
 			// final Uri u = smsAccessor.insertSms(SmsDbHelper.SMS_URI, m);
@@ -167,10 +165,8 @@ public class CustomReceivers {
 				Uri u = smsAccessor.insertSms(m);
 				m = smsAccessor.getSingleSms(u);
 			} else {
-				smsAccessor.updateSmsStatus(
-						Uri.withAppendedPath(SmsDbHelper.SMS_URI,
-								String.valueOf(m.getId())),
-						SmsModel.STATUS_NONE, SmsModel.MESSAGE_TYPE_SENT);
+				smsAccessor.updateSmsStatus(m.getId(), SmsModel.STATUS_NONE,
+						SmsModel.MESSAGE_TYPE_SENT);
 			}
 			Log.i(TAG, String.format(
 					"Send complete for message %s:%s",
