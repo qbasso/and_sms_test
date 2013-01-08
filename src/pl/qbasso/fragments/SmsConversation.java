@@ -13,6 +13,7 @@ import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.interfaces.ItemSeenListener;
 import pl.qbasso.interfaces.OnMessageSendCompleteListener;
 import pl.qbasso.interfaces.SmsDraftAvailableListener;
+import pl.qbasso.loaders.SmsContentObserver;
 import pl.qbasso.models.ActionModel;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
@@ -24,7 +25,6 @@ import pl.qbasso.smssender.R;
 import pl.qbasso.view.CustomPopup;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.NotificationManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -78,7 +78,6 @@ public class SmsConversation extends Fragment {
 	private SmsDraftAvailableListener draftAvailableListener;
 	private Messenger messenger;
 	private Messenger mService;
-	private NotificationManager nm;
 	private boolean shouldSendMessage = false;
 
 	private OnItemLongClickListener itemLongClickListener = new OnItemLongClickListener() {
@@ -89,7 +88,6 @@ public class SmsConversation extends Fragment {
 			AlertDialog.Builder b = new AlertDialog.Builder(act);
 			b.setTitle("Opcje wiadomoœci").setItems(R.array.message_actions,
 					new DialogInterface.OnClickListener() {
-
 						public void onClick(DialogInterface dialog, int which) {
 							switch (which) {
 							case 0:
@@ -99,7 +97,8 @@ public class SmsConversation extends Fragment {
 								startActivity(i);
 								break;
 							case 1:
-								Intent intent = new Intent(act, DeleteMultipleSms.class);
+								Intent intent = new Intent(act,
+										DeleteMultipleSms.class);
 								intent.putExtra("info", info);
 								startActivityForResult(intent, 0);
 								break;
@@ -133,7 +132,12 @@ public class SmsConversation extends Fragment {
 		}
 	};
 
-	private Handler smsThreadHandler = new Handler();
+	private Handler smsThreadHandler = new Handler() {
+		@Override
+		public void handleMessage(Message msg) {
+			updateItems(true);
+		}
+	};
 
 	private Handler incomingHandler = new Handler() {
 		@Override
@@ -242,7 +246,6 @@ public class SmsConversation extends Fragment {
 	};
 
 	private OnItemClickListener itemClickListener = new OnItemClickListener() {
-
 		public void onItemClick(AdapterView<?> arg0, View arg1, int arg2,
 				long arg3) {
 			SmsModel m = items.get(arg2);
@@ -295,6 +298,7 @@ public class SmsConversation extends Fragment {
 			}
 		}
 	};
+	private SmsContentObserver observer;
 
 	@Override
 	public void onPause() {
@@ -321,6 +325,10 @@ public class SmsConversation extends Fragment {
 		smsList.setOnItemLongClickListener(itemLongClickListener);
 		info = (ConversationModel) getArguments().getSerializable(
 				EXTRA_CONVERSATION_INFO);
+		observer = new SmsContentObserver(smsThreadHandler);
+		act.getContentResolver().registerContentObserver(
+				Uri.withAppendedPath(SmsDbHelper.SMS_CONVERSATIONS_URI,
+						Long.toString(info.getThreadId())), true, observer);
 	}
 
 	public void updateItems(boolean reload) {
@@ -348,6 +356,7 @@ public class SmsConversation extends Fragment {
 		super.onActivityCreated(savedInstanceState);
 		act.bindService(new Intent(act, SendTaskService.class), connection,
 				Context.BIND_AUTO_CREATE);
+//		smsList.addFooterView(act.getLayoutInflater().inflate(R.layout.send_item, null));
 		updateItems(true);
 		bar.setVisibility(View.GONE);
 		smsList.setVisibility(View.VISIBLE);
@@ -411,6 +420,7 @@ public class SmsConversation extends Fragment {
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
+		act.getContentResolver().unregisterContentObserver(observer);
 		act.unbindService(connection);
 		super.onDestroyView();
 	}
@@ -426,7 +436,7 @@ public class SmsConversation extends Fragment {
 
 	@Override
 	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (requestCode ==0 && resultCode == Activity.RESULT_OK) {
+		if (requestCode == 0 && resultCode == Activity.RESULT_OK) {
 			postDeleteMany(data);
 		}
 	}

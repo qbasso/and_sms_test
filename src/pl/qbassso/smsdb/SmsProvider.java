@@ -45,7 +45,7 @@ public class SmsProvider extends ContentProvider {
 	public static final int COLUMN_SMS_TYPE_NUMBER = 6;
 	public final static int COLUMN_SMS_BODY_NUMBER = 7;
 
-	public final static String COLUMN_CONVERSATION_ID = "_id";
+	public final static String COLUMN_CONVERSATION_ID = "thread_id";
 	public final static String COLUMN_CONVERSATION_SNIPPET = "snippet";
 	public final static String COLUMN_CONVERSATION_COUNT = "count";
 	public final static String COLUMN_CONVERSATION_DATE = "date";

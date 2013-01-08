@@ -126,7 +126,8 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 			}
 			leftHolder.msgBody.setAutoLinkMask(Linkify.ALL);
 			leftHolder.msgBody.setText(item.getBody());
-			//this enables custom handing of touch events in @LinkEnabledTextView
+			// this enables custom handing of touch events in
+			// @LinkEnabledTextView
 			leftHolder.msgBody.setMovementMethod(null);
 			leftHolder.msgDate.setText(Utils.formatDate(item.getDate()));
 			if (item.getStatus() == SmsModel.STATUS_WAITING) {
@@ -218,7 +219,7 @@ public class SmsAdapter extends ArrayAdapter<SmsModel> {
 
 	@Override
 	public int getViewTypeCount() {
-		return 2;
+		return 3;
 	}
 
 	/**

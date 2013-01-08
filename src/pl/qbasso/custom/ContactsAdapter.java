@@ -33,7 +33,7 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 			"≥", "ü", "ø", "•", "∆", " ", "”", "£", "è", "Ø" };
 	private static final CharSequence[] REPLACEMENTS = { "a", "c", "e", "o",
 			"l", "z", "z", "A", "C", "E", "O", "L", "Z", "Z" };
-
+	
 	/**
 	 * Instantiates a new contacts adapter.
 	 * 
@@ -150,10 +150,11 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 			filter = new Filter() {
 				@Override
 				protected FilterResults performFiltering(CharSequence constraint) {
-//					constraint = TextUtils.replace(constraint, CHARACTERS_TO_REPLACE, REPLACEMENTS);
+					// constraint = TextUtils.replace(constraint,
+					// CHARACTERS_TO_REPLACE, REPLACEMENTS);
 					FilterResults result = new FilterResults();
 					filteredItems.clear();
-					if (lastConstraintLength == 0) {
+					if (lastConstraintLength == 0 || filteredItems == null) {
 						getContacts(constraint, ACTION_RELOAD);
 					} else {
 						getContacts(constraint, ACTION_RESTRICT);

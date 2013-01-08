@@ -6,7 +6,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class SmsDatabaseHelper extends SQLiteOpenHelper {
 
-	private static final int DATABASE_VERSION = 30;
+	private static final int DATABASE_VERSION = 48;
 
 	private static final String DATABASE_NAME = "pl.qbasso.smsdb";
 
@@ -18,7 +18,7 @@ public class SmsDatabaseHelper extends SQLiteOpenHelper {
 			+ SMS_TABLE_NAME
 			+ " ("
 			+ "_id integer primary key autoincrement,"
-			+ " thread_id integer not null references conversations (_id) on delete cascade deferrable initially deferred,"
+			+ " thread_id integer not null references conversations (thread_id) on delete cascade deferrable initially deferred,"
 			+ " address text not null,"
 			+ " date integer,"
 			+ " read integer,"
@@ -28,9 +28,9 @@ public class SmsDatabaseHelper extends SQLiteOpenHelper {
 	private static final String CREATE_CONVERSATION_TABLE = "create table if not exists "
 			+ CONVERSATION_TABLE_NAME
 			+ "("
-			+ "_id integer primary key autoincrement,"
+			+ "thread_id integer primary key autoincrement,"
 			+ " snippet text,"
-			+ " count integer,"
+			+ " msg_count integer,"
 			+ " date integer,"
 			+ " unread integer,"
 			+ " has_draft integer" + ")";
@@ -43,19 +43,8 @@ public class SmsDatabaseHelper extends SQLiteOpenHelper {
 			+ "insert into text_log(log_message) values('sms_before_insert'); "
 			+ " insert into "
 			+ CONVERSATION_TABLE_NAME
-			+ "(snippet, count, date, unread, has_draft) values(new.body, 1, new.date, 0, 0);"
+			+ "(snippet, msg_count, date, unread, has_draft) values(new.body, 1, new.date, 0, 0);"
 			+ "END;";
-
-	// private static final String CREATE_SMS_INSTEAD_INSERT_TRIGGER =
-	// "create trigger if not exists sms_instead_insert_t"
-	// + " INSTEAD OF INSERT ON "
-	// + SMS_TABLE_NAME
-	// + " when new.thread_id = -1"
-	// + " BEGIN "
-	// + " insert into "
-	// + SMS_TABLE_NAME
-	// + "(thread_id) values(select max(_id) from conversations);"
-	// + "END;";
 
 	private static final String CREATE_SMS_AFTER_INSERT_TRIGGER = "create trigger if not exists sms_after_insert_t"
 			+ " AFTER INSERT ON "
@@ -64,19 +53,19 @@ public class SmsDatabaseHelper extends SQLiteOpenHelper {
 			+ "insert into text_log(log_message) values('sms_after_insert'); "
 			+ " update "
 			+ SMS_TABLE_NAME
-			+ " set thread_id=(select max(_id) from conversations) where thread_id = -1; "
+			+ " set thread_id=(select max(thread_id) from conversations) where thread_id = -1; "
 			+ " update "
 			+ CONVERSATION_TABLE_NAME
-			+ " set snippet=new.body, date=new.date where _id = new.thread_id; "
+			+ " set snippet=new.body, date=new.date where thread_id = new.thread_id; "
 			+ " update "
 			+ CONVERSATION_TABLE_NAME
-			+ " set count=count+1 where _id = new.thread_id and new.type <> 3; "
+			+ " set msg_count=msg_count+1 where thread_id = new.thread_id and new.type <> 3; "
 			+ "update "
 			+ CONVERSATION_TABLE_NAME
-			+ " set has_draft = 1 where _id = new.thread_id and new.type = 3; "
+			+ " set has_draft = 1 where thread_id = new.thread_id and new.type = 3; "
 			+ "update "
 			+ CONVERSATION_TABLE_NAME
-			+ " set unread = unread + 1 where _id = new.thread_id and new.read = 0; "
+			+ " set unread = unread + 1 where thread_id = new.thread_id and new.read = 0; "
 			+ "END;";
 
 	private static final String CREATE_SMS_DELETE_TRIGGER = "create trigger if not exists sms_delete_t"
@@ -87,14 +76,14 @@ public class SmsDatabaseHelper extends SQLiteOpenHelper {
 			+ CONVERSATION_TABLE_NAME
 			+ " set snippet = "
 			+ "(select body from text_messages where date = "
-			+ "(select max(date) from text_messages where thread_id = old.thread_id)), date = (select max(date) from text_messages where thread_id=old.thread_id) where _id = old.thread_id; "
+			+ "(select max(date) from text_messages where thread_id = old.thread_id)), date = (select max(date) from text_messages where thread_id=old.thread_id) where thread_id = old.thread_id; "
 			+ "update "
 			+ CONVERSATION_TABLE_NAME
-			+ " set count = count - 1"
-			+ " where _id = old.thread_id and old.type <> 3; "
+			+ " set msg_count = msg_count - 1"
+			+ " where thread_id = old.thread_id and old.type <> 3; "
 			+ "update "
 			+ CONVERSATION_TABLE_NAME
-			+ " set has_draft = 0 where _id = old.thread_id and old.type = 3; "
+			+ " set has_draft = 0 where thread_id = old.thread_id and old.type = 3; "
 			+ "END;";
 
 	private static final String CREATE_SMS_UPDATE_TRIGGER = "create trigger if not exists sms_update_t"
@@ -104,13 +93,13 @@ public class SmsDatabaseHelper extends SQLiteOpenHelper {
 			+ "insert into text_log(log_message) values('sms_update_insert'); "
 			+ "update "
 			+ CONVERSATION_TABLE_NAME
-			+ " set has_draft = 0, snippet =" +
-			"(select body from text_messages where _id = new.thread_id and date = "+
-			"(select max(date) from text_messages where _id = new.thread_id))" 
-			+ " where _id = new.thread_id and old.type = 3 and new.type <> 3; "
+			+ " set has_draft = 0, snippet ="
+			+ "(select body from text_messages where _id = new.thread_id and date = "
+			+ "(select max(date) from text_messages where _id = new.thread_id))"
+			+ " where thread_id = new.thread_id and old.type = 3 and new.type <> 3; "
 			+ "update "
 			+ CONVERSATION_TABLE_NAME
-			+ " set unread = unread -1 where old.read = 0 and new.read = 0 and _id = old.thread_id and old.thread_id = _id; "
+			+ " set unread = unread-1 where old.read = 0 and new.read = 1 and thread_id = old.thread_id and unread > 0; "
 			+ "END;";
 
 	private static final String CREATE_LOG_TABLE = "create table if not exists text_log(_id integer primary key, log_message text)";
@@ -126,11 +115,10 @@ public class SmsDatabaseHelper extends SQLiteOpenHelper {
 		db.execSQL(CREATE_LOG_TABLE);
 		db.execSQL(CREATE_SMS_BEFORE_INSERT_TRIGGER);
 		db.execSQL(CREATE_SMS_AFTER_INSERT_TRIGGER);
-		// db.execSQL(CREATE_SMS_INSTEAD_INSERT_TRIGGER);
 		db.execSQL(CREATE_SMS_DELETE_TRIGGER);
 		db.execSQL(CREATE_SMS_UPDATE_TRIGGER);
-		db.execSQL("insert into conversations(snippet, count, date, unread, has_draft) values('czesc', 0, 123214452, 0, 0)");
-		db.execSQL("insert into text_messages(thread_id, address, date, read, status, type, body) values(1, '791287139', 123214452, 1, 1, 1, 'Czesc')");
+		// db.execSQL("insert into conversations(snippet, count, date, unread, has_draft) values('czesc', 0, 123214452, 0, 0)");
+		// db.execSQL("insert into text_messages(thread_id, address, date, read, status, type, body) values(1, '791287139', 123214452, 1, 1, 1, 'Czesc')");
 	}
 
 	@Override

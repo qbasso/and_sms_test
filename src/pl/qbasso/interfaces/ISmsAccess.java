@@ -30,7 +30,7 @@ public interface ISmsAccess {
 
 	public abstract void deleteThread(long threadId);
 
-	public abstract void deleteSms(long smsId);
+	public abstract int deleteSms(long smsId);
 
 	public abstract int updateSmsRead(long id, int messageRead);
 
@@ -47,5 +47,16 @@ public interface ISmsAccess {
 	public abstract int getUnreadCount();
 
 	public abstract void getDetailsForConversation(ConversationModel m);
+	
+	public abstract int performBackup(String fileName);
+	
+	public abstract String readBackupFile(String fileName);
+	
+	public abstract List<Long> getUnreadThreadIds();
 
+	public abstract List<SmsModel> getAllSms();
+	
+	public abstract void importDataFromProvider(ISmsAccess a);
+
+	public abstract boolean dbEmpty();
 }

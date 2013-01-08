@@ -16,7 +16,7 @@
     <string name="crash_occured">Raport błędu zostanie wysłany</string>
 
     <string-array name="conversation_actions">
-        <item>Usuń wątek</item>        
+        <item>Usuń wątek</item>
         <item>Dodaj kontakt</item>
         <item>Usuń wiele</item>
     </string-array>

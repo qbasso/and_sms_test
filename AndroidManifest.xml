@@ -13,6 +13,7 @@
     <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.WRITE_SMS" />
+	<uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.VIBRATE" />
 
@@ -74,7 +75,6 @@
             android:authorities="pl.qbasso.smsdb.SmsProvider"
             android:exported="false" >
         </provider>
-        <activity android:name="pl.qbasso.activities.ConversationListCb"></activity>
         <activity android:name="pl.qbasso.activities.DeleteMultipleSms"></activity>
     </application>
 

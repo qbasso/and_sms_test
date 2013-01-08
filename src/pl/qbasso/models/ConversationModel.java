@@ -26,6 +26,10 @@ public class ConversationModel implements Serializable {
 	/** The Constant READ. */
 	public static final String READ = "read";
 	
+	public static final String UNREAD = "unread";
+	
+	public static final String DRAFT = "has_draft";
+	
 	/** The thread id. */
 	private long threadId;
 	

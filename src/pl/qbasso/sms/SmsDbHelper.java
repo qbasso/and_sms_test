@@ -3,18 +3,29 @@
  */
 package pl.qbasso.sms;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 
 import pl.qbasso.interfaces.ISmsAccess;
+import pl.qbasso.loaders.SmsContentObserver;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Environment;
 import android.provider.ContactsContract.PhoneLookup;
 
 // TODO: Auto-generated Javadoc
@@ -24,7 +35,7 @@ import android.provider.ContactsContract.PhoneLookup;
 public class SmsDbHelper implements ISmsAccess {
 
 	/** The Constant SMS_URI. */
-	public static final Uri SMS_URI = Uri.parse("content://sms");
+	public static final Uri SMS_URI = Uri.parse("content://smsowo");
 	/** The Constant SMS_OUTBOX_URI. */
 	public static final Uri SMS_OUTBOX_URI = Uri.parse("content://sms/sent");
 	/** The Constant SMS_INBOX_URI. */
@@ -54,8 +65,8 @@ public class SmsDbHelper implements ISmsAccess {
 		values.put(SmsModel.STATUS, smsStatus);
 		values.put(SmsModel.TYPE, smsType);
 		result = resolver.update(
-				Uri.withAppendedPath(SMS_URI, Long.toString(messageId)), values,
-				null, null);
+				Uri.withAppendedPath(SMS_URI, Long.toString(messageId)),
+				values, null, null);
 		return result;
 	}
 
@@ -66,6 +77,7 @@ public class SmsDbHelper implements ISmsAccess {
 	 * pl.qbasso.models.SmsModel)
 	 */
 	public Uri insertSms(SmsModel m) {
+		Uri result;
 		ContentValues values = new ContentValues();
 		values.put(SmsModel.ADDRESS, m.getAddress());
 		values.put(SmsModel.BODY, m.getBody());
@@ -77,9 +89,32 @@ public class SmsDbHelper implements ISmsAccess {
 		if (m.getThreadId() != -1) {
 			values.put(SmsModel.THREAD_ID, m.getThreadId());
 		}
+		if (m.getId() > 0) {
+			values.put(SmsModel.ID, m.getId());
+		}
 		values.put(SmsModel.TYPE, m.getSmsType());
 		values.put(SmsModel.STATUS, m.getStatus());
-		return resolver.insert(SMS_URI, values);
+		result = resolver.insert(SMS_URI, values);
+		return result;
+	}
+
+	public Uri insertConversation(ConversationModel m) {
+		ContentValues values = new ContentValues();
+		values.put(ConversationModel.THREAD_ID, m.getThreadId());
+		values.put(ConversationModel.SNIPPET, m.getSnippet());
+		values.put(ConversationModel.MESSAGE_COUNT, m.getCount());
+		return resolver.insert(SMS_CONVERSATIONS_URI, values);
+	}
+
+	public boolean threadExists(long threadId) {
+		Cursor c = resolver.query(SMS_CONVERSATIONS_URI,
+				new String[] { ConversationModel.THREAD_ID },
+				ConversationModel.THREAD_ID + "=?",
+				new String[] { String.valueOf(threadId) }, null);
+		if (c != null && c.moveToNext()) {
+			return true;
+		}
+		return false;
 	}
 
 	/*
@@ -306,6 +341,23 @@ public class SmsDbHelper implements ISmsAccess {
 		}
 	}
 
+	public List<Long> getUnreadThreadIds() {
+		Cursor c1;
+		List<Long> result = new ArrayList<Long>();
+		c1 = resolver.query(SMS_URI,
+				new String[] { ConversationModel.THREAD_ID }, SmsModel.READ
+						+ " = ?",
+				new String[] { String.valueOf(SmsModel.MESSAGE_NOT_READ) },
+				null);
+		if (c1 != null) {
+			while (c1.moveToNext()) {
+				result.add(c1.getLong(0));
+			}
+			c1.close();
+		}
+		return result;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -328,6 +380,23 @@ public class SmsDbHelper implements ISmsAccess {
 				result.add(new SmsModel(c.getLong(0), threadId, c.getString(2),
 						"", c.getLong(3), c.getString(1), c.getInt(4), c
 								.getInt(5), c.getInt(6)));
+			}
+			c.close();
+		}
+		return result;
+	}
+
+	public List<SmsModel> getAllSms() {
+		List<SmsModel> result = new ArrayList<SmsModel>();
+		Cursor c = resolver.query(SMS_URI, new String[] { SmsModel.ID,
+				SmsModel.BODY, SmsModel.ADDRESS, SmsModel.DATE, SmsModel.TYPE,
+				SmsModel.READ, SmsModel.STATUS, SmsModel.THREAD_ID }, null,
+				null, null);
+		if (c != null) {
+			while (c.moveToNext()) {
+				result.add(new SmsModel(c.getLong(0), c.getLong(7), c
+						.getString(2), "", c.getLong(3), c.getString(1), c
+						.getInt(4), c.getInt(5), c.getInt(6)));
 			}
 			c.close();
 		}
@@ -373,9 +442,11 @@ public class SmsDbHelper implements ISmsAccess {
 	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#deleteSms(android.net.Uri, long)
 	 */
-	public void deleteSms(long smsId) {
-		resolver.delete(SMS_URI, SmsModel.ID + "=?",
+	public int deleteSms(long smsId) {
+		int result = 0;
+		result = resolver.delete(SMS_URI, SmsModel.ID + " = ?",
 				new String[] { String.valueOf(smsId) });
+		return result;
 	}
 
 	/*
@@ -512,4 +583,112 @@ public class SmsDbHelper implements ISmsAccess {
 		}
 		return result;
 	}
+
+	public int performBackup(String fileName) {
+		// TODO test method
+		int result = 0;
+		try {
+			if (Environment.getExternalStorageState().equals(
+					Environment.MEDIA_MOUNTED)) {
+				File f = new File(fileName);
+				if (!f.exists()) {
+					f.getParentFile().mkdirs();
+				}
+				List<ConversationModel> conversations = getThreads(null);
+				List<SmsModel> textMessages = getAllSms();
+				ObjectOutputStream oos = new ObjectOutputStream(
+						new BufferedOutputStream(new FileOutputStream(f)));
+				oos.writeObject(conversations);
+				oos.writeObject(textMessages);
+				oos.close();
+			} else {
+				result = 1;
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			result = 2;
+		} catch (IOException e) {
+			e.printStackTrace();
+			result = 3;
+		}
+		return result;
+	}
+
+	@SuppressWarnings("unchecked")
+	public String readBackupFile(String fileName) {
+		String result = "";
+		// TODO test method
+		List<ConversationModel> conversations;
+		List<SmsModel> textMessages;
+		try {
+			if (Environment.getExternalStorageState().equals(
+					Environment.MEDIA_MOUNTED)
+					&& (new File(fileName)).exists()) {
+				ObjectInputStream ois = new ObjectInputStream(
+						new BufferedInputStream(new FileInputStream(fileName)));
+				conversations = (List<ConversationModel>) ois.readObject();
+				textMessages = (List<SmsModel>) ois.readObject();
+				for (ConversationModel conversationModel : conversations) {
+					if (!threadExists(conversationModel.getThreadId())) {
+						deleteThread(conversationModel.getThreadId());
+						insertConversation(conversationModel);
+					}
+				}
+				int count = textMessages.size();
+				int i = 0;
+				for (SmsModel smsModel : textMessages) {
+					if (!smsExist(smsModel.getId(), smsModel.getBody())) {
+						insertSms(smsModel);
+						i++;
+					}
+				}
+				result = String.format(
+						"Total: %d. %d messages exist. %d messages imported.",
+						count, count - i, i);
+			} else {
+				result = "Backup file not available";
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (ClassNotFoundException e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+
+	private boolean smsExist(long id, String body) {
+		boolean result = false;
+		Cursor c = resolver.query(SMS_URI, new String[] { SmsModel.ID },
+				SmsModel.ID + " = ? and " + SmsModel.BODY + " = ?",
+				new String[] { String.valueOf(id), body }, null);
+		if (c != null && c.moveToNext()) {
+			result = true;
+		}
+		return result;
+	}
+
+	public boolean isProviderAvailable() {
+		Cursor c = resolver.query(SMS_URI, new String[] { SmsModel.ID },
+				SmsModel.ID + "=?", new String[] { "111111111" }, null);
+		if (c != null) {
+			c.close();
+			return true;
+
+		} else {
+			return false;
+		}
+	}
+
+	public void importDataFromProvider(ISmsAccess a) {
+		// TODO Auto-generated method stub
+
+	}
+
+	public boolean dbEmpty() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 }

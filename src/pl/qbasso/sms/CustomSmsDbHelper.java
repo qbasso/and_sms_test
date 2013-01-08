@@ -58,6 +58,7 @@ public class CustomSmsDbHelper implements ISmsAccess {
 	 * pl.qbasso.models.SmsModel)
 	 */
 	public Uri insertSms(SmsModel m) {
+		Uri result;
 		ContentValues values = new ContentValues();
 		values.put(SmsProvider.COLUMN_SMS_ADDRESS, m.getAddress());
 		values.put(SmsProvider.COLUMN_SMS_BODY, m.getBody());
@@ -72,7 +73,8 @@ public class CustomSmsDbHelper implements ISmsAccess {
 		// }
 		values.put(SmsProvider.COLUMN_SMS_TYPE, m.getSmsType());
 		values.put(SmsProvider.COLUMN_SMS_STATUS, m.getStatus());
-		return resolver.insert(SMS_URI, values);
+		result = resolver.insert(SMS_URI, values);
+		return result;
 	}
 
 	/*
@@ -207,9 +209,8 @@ public class CustomSmsDbHelper implements ISmsAccess {
 		}
 		if (c != null) {
 			while (c.moveToNext()) {
-
 				ConversationModel m = new ConversationModel(
-						c.getLong(SmsProvider.sSmsProjectionMap
+						c.getLong(SmsProvider.sConversationProjectionMap
 								.get(SmsProvider.COLUMN_CONVERSATION_ID)),
 						c.getInt(SmsProvider.sConversationProjectionMap
 								.get(SmsProvider.COLUMN_CONVERSATION_COUNT)),
@@ -351,10 +352,12 @@ public class CustomSmsDbHelper implements ISmsAccess {
 	 * 
 	 * @see pl.qbasso.sms.ISmsAccess#deleteSms(android.net.Uri, long)
 	 */
-	public void deleteSms(long smsId) {
+	public int deleteSms(long smsId) {
+		int result = 0;
 		// TODO change constants
-		resolver.delete(SMS_URI, SmsModel.ID + "=?",
+		result = resolver.delete(SMS_URI, SmsModel.ID + "=?",
 				new String[] { String.valueOf(smsId) });
+		return result;
 	}
 
 	/*
@@ -500,6 +503,65 @@ public class CustomSmsDbHelper implements ISmsAccess {
 
 	public void getDetailsForConversation(ConversationModel m) {
 	}
-	
+
+	public int performBackup(String fileName) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	public String readBackupFile(String fileName) {
+		return null;
+	}
+
+	public List<Long> getUnreadThreadIds() {
+		Cursor c1;
+		List<Long> result = new ArrayList<Long>();
+		c1 = resolver.query(SMS_URI,
+				new String[] { ConversationModel.THREAD_ID }, SmsModel.READ
+						+ " = ?",
+				new String[] { String.valueOf(SmsModel.MESSAGE_NOT_READ) },
+				null);
+		if (c1 != null) {
+			while (c1.moveToNext()) {
+				result.add(c1.getLong(0));
+			}
+			c1.close();
+		}
+		return result;
+	}
+
+	public void importDataFromProvider(ISmsAccess defaultProviderAccess) {
+		List<ConversationModel> conversations = defaultProviderAccess
+				.getThreads(null);
+		List<SmsModel> textMessages = defaultProviderAccess.getAllSms();
+		for (ConversationModel conversation : conversations) {
+			insertConversation(conversation);
+		}
+		for (SmsModel smsModel : textMessages) {
+			insertSms(smsModel);
+		}
+	}
+
+	private Uri insertConversation(ConversationModel conversation) {
+		Uri result;
+		ContentValues values = new ContentValues();
+		values.put(ConversationModel.THREAD_ID, conversation.getThreadId());
+		values.put(ConversationModel.SNIPPET, conversation.getSnippet());
+		values.put(ConversationModel.MESSAGE_COUNT, conversation.getCount());
+		values.put(ConversationModel.UNREAD, conversation.getUnread());
+		values.put(ConversationModel.DRAFT, conversation.isDraft() ? 1 : 0);
+		result = resolver.insert(SMS_CONVERSATIONS_URI, values);
+		return result;
+	}
+
+	public boolean dbEmpty() {
+		Cursor c = resolver.query(SMS_CONVERSATIONS_URI,
+				new String[] { ConversationModel.THREAD_ID }, null, null, null);
+		if (c != null && c.moveToNext()) {
+			return false;
+		} else {
+			return true;
+		}
+	}
 
 }

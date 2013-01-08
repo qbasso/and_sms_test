@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import pl.qbasso.custom.SmsAdapterSelectable;
+import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
+import pl.qbasso.sms.CustomSmsDbHelper;
 import pl.qbasso.sms.SmsDbHelper;
 import pl.qbasso.smssender.R;
 import android.app.Activity;
@@ -23,10 +25,9 @@ public class DeleteMultipleSms extends Activity {
 	private SmsAdapterSelectable mAdapter;
 	private Button mConfirmButton;
 	private Button mCancelButton;
-	private SmsDbHelper helper;
+	private ISmsAccess helper;
 	private ConversationModel mInfo;
 	private OnClickListener mConfirmListener = new OnClickListener() {
-
 
 		public void onClick(View v) {
 			int counter = 0;
@@ -38,7 +39,7 @@ public class DeleteMultipleSms extends Activity {
 				}
 			}
 			Intent i = new Intent();
-			i.putExtra("items_left", mItems.size()-counter);
+			i.putExtra("items_left", mItems.size() - counter);
 			setResult(Activity.RESULT_OK, i);
 			finish();
 		}
@@ -61,9 +62,13 @@ public class DeleteMultipleSms extends Activity {
 		mCancelButton = (Button) findViewById(R.id.cancel_button);
 		mConfirmButton.setOnClickListener(mConfirmListener);
 		mCancelButton.setOnClickListener(mCancelListener);
-		helper = new SmsDbHelper(getContentResolver());
-	    mInfo = (ConversationModel) getIntent().getSerializableExtra("info");
-	    mItems = helper.getSmsForThread(mInfo.getThreadId());
+		if (AppConstants.DB == 1) {
+			helper = new SmsDbHelper(getContentResolver());
+		} else {
+			helper = new CustomSmsDbHelper(getContentResolver());
+		}
+		mInfo = (ConversationModel) getIntent().getSerializableExtra("info");
+		mItems = helper.getSmsForThread(mInfo.getThreadId());
 		mAdapter = new SmsAdapterSelectable(this, R.layout.left_sms_item,
 				R.layout.right_sms_item, mItems, mInfo.getDisplayName(), 0);
 		mSmsList.setAdapter(mAdapter);

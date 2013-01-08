@@ -1,14 +1,21 @@
 package pl.qbasso.activities;
 
+import java.io.File;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import pl.qbasso.custom.BackupAsyncTask;
+import pl.qbasso.custom.BackupAsyncTask.BackupAsyncTaskListener;
 import pl.qbasso.custom.ContactsAdapter;
 import pl.qbasso.custom.ConversationAdapter;
 import pl.qbasso.custom.SendTaskService;
 import pl.qbasso.custom.SlideHelper;
 import pl.qbasso.custom.Utils;
+import pl.qbasso.dialogs.BackupPromptDialog;
+import pl.qbasso.dialogs.BackupPromptDialog.BackupDialogListener;
 import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.interfaces.SlidingViewLoadedListener;
 import pl.qbasso.models.ConversationModel;
@@ -35,6 +42,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -42,7 +50,10 @@ import android.os.Messenger;
 import android.os.RemoteException;
 import android.provider.ContactsContract.Contacts;
 import android.provider.ContactsContract.Intents.Insert;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentActivity;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -64,9 +75,10 @@ import android.widget.ViewFlipper;
  * 
  * @author jakub.porzuczek
  */
-public class ConversationList extends Activity { // implements
-													// LoaderCallbacks<List<ConversationModel>>
-													// {
+public class ConversationList extends FragmentActivity implements
+		BackupDialogListener, BackupAsyncTaskListener { // implements
+	// LoaderCallbacks<List<ConversationModel>>
+	// {
 	/**
 	 * The Constant EXTRA_CLIENT_ID. Used when passing intent extra client id to
 	 * message sending service
@@ -159,15 +171,22 @@ public class ConversationList extends Activity { // implements
 										.setAdapter(mConversationAdapterCb);
 								composeButton.setText("Usuñ");
 								mViewFlipper.setDisplayedChild(1);
+								break;
 							default:
 								break;
 							}
 						}
+
 					});
 			b.create().show();
 			return false;
 		}
 	};
+
+	private void showBackupPropmt(int type) {
+		BackupPromptDialog dialog = BackupPromptDialog.getInstance(type);
+		dialog.show(getSupportFragmentManager(), "dialog");
+	}
 
 	/**
 	 * start activity to add new contact or edit if it exists
@@ -197,6 +216,7 @@ public class ConversationList extends Activity { // implements
 		mainHandler.postDelayed(new Runnable() {
 			public void run() {
 				removeConversation(item);
+				mConversationAdapter.notifyDataSetChanged();
 			}
 
 		}, anim.getDuration());
@@ -205,7 +225,6 @@ public class ConversationList extends Activity { // implements
 	private void removeConversation(final ConversationModel item) {
 		smsAccessor.deleteThread(item.getThreadId());
 		items.remove(item);
-		mConversationAdapter.notifyDataSetChanged();
 	}
 
 	/**
@@ -388,19 +407,20 @@ public class ConversationList extends Activity { // implements
 
 		private void removeSelectedThreads() {
 			boolean[] data = mConversationAdapterCb.getChecked();
+			int i = 0;
 			mViewFlipper.setDisplayedChild(0);
 			showProgressDialog();
-			for (int i = 0; i < data.length; i++) {
-				if (data[i]) {
-					removeConversation(items.get(i));
+			Iterator<ConversationModel> it = items.iterator();
+			while (it.hasNext()) {
+				if (data[i++]) {
+					removeConversation(it.next());
 				}
 			}
+			mConversationAdapter.notifyDataSetChanged();
 			composeButton.setText("Nowa...");
 			pd.dismiss();
 		}
 	};
-
-	protected boolean listDisplayed = false;
 
 	/**
 	 * Update items.
@@ -412,15 +432,27 @@ public class ConversationList extends Activity { // implements
 		new Thread(new Runnable() {
 			public void run() {
 				if (!refresh) {
-					Cache.getInstance();
-					Cache.putAll(smsAccessor.getThreads(null));
+					if (Cache.isEmpty()) {
+						Cache.putAll(smsAccessor.getThreads(null));
+					}
+					List<Long> l = smsAccessor.getUnreadThreadIds();
+					if (l.size() > 0) {
+						for (Long long1 : l) {
+							Cache.addToRefreshSet(long1, true);
+						}
+						Cache.putInOrder(smsAccessor.getThreads(Cache
+								.getRefreshList()));
+						Cache.clearRefreshSet();
+					}
 					items = (CopyOnWriteArrayList<ConversationModel>) Cache
 							.getAll();
+
 				} else {
 					Cache.putInOrder(smsAccessor.getThreads(Cache
 							.getRefreshList()));
 					Cache.clearRefreshSet();
-					items = (CopyOnWriteArrayList<ConversationModel>) Cache.getAll();
+					items = (CopyOnWriteArrayList<ConversationModel>) Cache
+							.getAll();
 				}
 				mainHandler.sendEmptyMessage(0);
 			}
@@ -440,7 +472,8 @@ public class ConversationList extends Activity { // implements
 		if (getIntent().getBooleanExtra(EXTRA_CANCEL_ALARM, false)) {
 			((AlarmManager) getSystemService(ALARM_SERVICE))
 					.cancel(PendingIntent.getBroadcast(this, 0, new Intent(
-							SmsReceiver.ACTION_CANCEL_LIGHT), PendingIntent.FLAG_UPDATE_CURRENT));
+							SmsReceiver.ACTION_CANCEL_LIGHT),
+							PendingIntent.FLAG_UPDATE_CURRENT));
 		}
 		initViewMembers();
 		// getSupportLoaderManager().initLoader(0, null, this).forceLoad();
@@ -454,8 +487,8 @@ public class ConversationList extends Activity { // implements
 			public void run() {
 				for (ConversationModel model : items) {
 					smsAccessor.getDetailsForConversation(model);
+					mainHandler.sendEmptyMessage(1);
 				}
-				mainHandler.sendEmptyMessage(1);
 
 			}
 		}).start();
@@ -598,7 +631,7 @@ public class ConversationList extends Activity { // implements
 			long threadId = smsAccessor.getThreadIdForPhoneNumber(sender);
 			SmsModel m = new SmsModel(0, threadId, sender, "",
 					System.currentTimeMillis(), body,
-					SmsModel.MESSAGE_TYPE_QUEUED, SmsModel.MESSAGE_NOT_READ,
+					SmsModel.MESSAGE_TYPE_QUEUED, SmsModel.MESSAGE_READ,
 					SmsModel.STATUS_WAITING);
 			m.setAddressDisplayName(contactsAdapter
 					.getCurrentlySelectedDisplayName() != null ? contactsAdapter
@@ -656,6 +689,48 @@ public class ConversationList extends Activity { // implements
 		} else {
 			return super.dispatchTouchEvent(ev);
 		}
+	}
+
+	@Override
+	public boolean onMenuItemSelected(int featureId, MenuItem item) {
+		// TODO Auto-generated method stub
+		switch (item.getItemId()) {
+		case R.id.do_backup:
+			showBackupPropmt(0);
+			break;
+		case R.id.do_restore:
+			showBackupPropmt(1);
+			break;
+		default:
+			break;
+		}
+		return super.onMenuItemSelected(featureId, item);
+	}
+
+	public void onDialogConfirm(DialogFragment dialog, String fileName,
+			int dialogType) {
+		dialog.dismiss();
+		if (Environment.getExternalStorageState().equals(
+				Environment.MEDIA_MOUNTED)) {
+			BackupAsyncTask task = new BackupAsyncTask(ctx, dialogType, pd);
+			task.setBackupAsyncTaskListener(this);
+			task.execute(Environment.getExternalStorageDirectory()
+					+ File.separator + "SmsSender" + File.separator + fileName);
+		} else {
+			Toast.makeText(ctx, "No sdcard available", Toast.LENGTH_SHORT)
+					.show();
+		}
+	}
+
+	public void onBackupRestoreComplete() {
+		new Thread(new Runnable() {
+			public void run() {
+				Cache.putAll(smsAccessor.getThreads(null));
+				items = (CopyOnWriteArrayList<ConversationModel>) Cache
+						.getAll();
+				mainHandler.sendEmptyMessage(0);
+			}
+		}).start();
 	}
 
 	// public Loader<List<ConversationModel>> onCreateLoader(int arg0, Bundle
