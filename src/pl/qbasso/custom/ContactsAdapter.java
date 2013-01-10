@@ -5,6 +5,7 @@ package pl.qbasso.custom;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 import pl.qbasso.models.ContactModel;
 import pl.qbasso.smssender.R;
@@ -33,7 +34,7 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 			"≥", "ü", "ø", "•", "∆", " ", "”", "£", "è", "Ø" };
 	private static final CharSequence[] REPLACEMENTS = { "a", "c", "e", "o",
 			"l", "z", "z", "A", "C", "E", "O", "L", "Z", "Z" };
-	
+
 	/**
 	 * Instantiates a new contacts adapter.
 	 * 
@@ -92,16 +93,24 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 	 * @return the contacts
 	 */
 	private void getContacts(CharSequence constraint, int action) {
+		String tempConstraint = null;
 		switch (action) {
 		case ACTION_RELOAD:
 			reloadItems(constraint);
 			break;
 		case ACTION_RESTRICT:
+			if (constraint == null) {
+				return;
+			}
+			tempConstraint = TextUtils
+					.replace(constraint, CHARACTERS_TO_REPLACE, REPLACEMENTS)
+					.toString().toLowerCase(Locale.getDefault());
 			for (ContactModel item : items) {
-				if (item.getDisplayName().toLowerCase()
-						.contains(constraint.toString().toLowerCase())
-						|| item.getPhoneNumber().toLowerCase()
-								.contains(constraint.toString().toLowerCase())) {
+				if (item.getDisplayName().toLowerCase(Locale.getDefault())
+						.contains(tempConstraint)
+						|| item.getPhoneNumber()
+								.toLowerCase(Locale.getDefault())
+								.contains(constraint)) {
 					filteredItems.add(item);
 				}
 			}
@@ -119,6 +128,9 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 	private void reloadItems(CharSequence constraint) {
 		Cursor c;
 		items.clear();
+		if (constraint == null) {
+			return;
+		}
 		if (!TextUtils.isDigitsOnly(constraint)) {
 			c = resolver.query(Phone.CONTENT_URI, new String[] {
 					Phone.DISPLAY_NAME, Phone.NUMBER }, Phone.DISPLAY_NAME
@@ -150,16 +162,18 @@ public class ContactsAdapter extends ArrayAdapter<ContactModel> implements
 			filter = new Filter() {
 				@Override
 				protected FilterResults performFiltering(CharSequence constraint) {
-					// constraint = TextUtils.replace(constraint,
-					// CHARACTERS_TO_REPLACE, REPLACEMENTS);
 					FilterResults result = new FilterResults();
 					filteredItems.clear();
-					if (lastConstraintLength == 0 || filteredItems == null) {
+					if (lastConstraintLength == 0) {
 						getContacts(constraint, ACTION_RELOAD);
 					} else {
 						getContacts(constraint, ACTION_RESTRICT);
 					}
-					lastConstraintLength = constraint.length();
+					if (constraint == null) {
+						lastConstraintLength = 0;
+					} else {
+						lastConstraintLength = constraint.length();
+					}
 					result.values = filteredItems;
 					result.count = filteredItems.size();
 					return result;

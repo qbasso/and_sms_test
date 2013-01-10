@@ -16,9 +16,9 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import pl.qbasso.interfaces.ISmsAccess;
-import pl.qbasso.loaders.SmsContentObserver;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import android.content.ContentResolver;
@@ -32,10 +32,10 @@ import android.provider.ContactsContract.PhoneLookup;
 /**
  * The Class SmsDbHelper.
  */
-public class SmsDbHelper implements ISmsAccess {
+public class DefaultSmsProviderHelper implements ISmsAccess {
 
 	/** The Constant SMS_URI. */
-	public static final Uri SMS_URI = Uri.parse("content://smsowo");
+	public static final Uri SMS_URI = Uri.parse("content://sms");
 	/** The Constant SMS_OUTBOX_URI. */
 	public static final Uri SMS_OUTBOX_URI = Uri.parse("content://sms/sent");
 	/** The Constant SMS_INBOX_URI. */
@@ -50,7 +50,7 @@ public class SmsDbHelper implements ISmsAccess {
 	/** The resolver. */
 	protected ContentResolver resolver;
 
-	public SmsDbHelper(ContentResolver r) {
+	public DefaultSmsProviderHelper(ContentResolver r) {
 		this.resolver = r;
 	}
 
@@ -95,6 +95,9 @@ public class SmsDbHelper implements ISmsAccess {
 		values.put(SmsModel.TYPE, m.getSmsType());
 		values.put(SmsModel.STATUS, m.getStatus());
 		result = resolver.insert(SMS_URI, values);
+//		resolver.notifyChange(
+//				Uri.withAppendedPath(SMS_CONVERSATIONS_URI,
+//						String.valueOf(m.getThreadId())), null);
 		return result;
 	}
 
@@ -131,6 +134,9 @@ public class SmsDbHelper implements ISmsAccess {
 				result = c.getLong(0);
 			}
 		}
+		resolver.notifyChange(
+				Uri.withAppendedPath(SMS_CONVERSATIONS_URI,
+						String.valueOf(result)), null);
 		return result;
 	}
 
@@ -628,6 +634,7 @@ public class SmsDbHelper implements ISmsAccess {
 						new BufferedInputStream(new FileInputStream(fileName)));
 				conversations = (List<ConversationModel>) ois.readObject();
 				textMessages = (List<SmsModel>) ois.readObject();
+				ois.close();
 				for (ConversationModel conversationModel : conversations) {
 					if (!threadExists(conversationModel.getThreadId())) {
 						deleteThread(conversationModel.getThreadId());
@@ -642,7 +649,7 @@ public class SmsDbHelper implements ISmsAccess {
 						i++;
 					}
 				}
-				result = String.format(
+				result = String.format(Locale.getDefault(),
 						"Total: %d. %d messages exist. %d messages imported.",
 						count, count - i, i);
 			} else {

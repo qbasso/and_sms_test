@@ -8,7 +8,7 @@ import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.CustomSmsDbHelper;
-import pl.qbasso.sms.SmsDbHelper;
+import pl.qbasso.sms.DefaultSmsProviderHelper;
 import pl.qbasso.smssender.R;
 import android.app.Activity;
 import android.content.Intent;
@@ -63,7 +63,7 @@ public class DeleteMultipleSms extends Activity {
 		mConfirmButton.setOnClickListener(mConfirmListener);
 		mCancelButton.setOnClickListener(mCancelListener);
 		if (AppConstants.DB == 1) {
-			helper = new SmsDbHelper(getContentResolver());
+			helper = new DefaultSmsProviderHelper(getContentResolver());
 		} else {
 			helper = new CustomSmsDbHelper(getContentResolver());
 		}

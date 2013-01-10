@@ -19,7 +19,7 @@ import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.Cache;
 import pl.qbasso.sms.CustomSmsDbHelper;
-import pl.qbasso.sms.SmsDbHelper;
+import pl.qbasso.sms.DefaultSmsProviderHelper;
 import pl.qbasso.sms.SmsSendHelper;
 import pl.qbasso.smssender.R;
 import pl.qbasso.view.CustomPopup;
@@ -218,6 +218,7 @@ public class SmsConversation extends Fragment {
 				smsThreadHandler.postDelayed(new Runnable() {
 					public void run() {
 						items.remove(b.getInt(EXTRA_ADAPTER_POSITION));
+						Cache.delete(info.getThreadId());
 						Cache.addToRefreshSet(info.getThreadId(), false);
 						if (items.size() == 0) {
 							draftAvailableListener.draftTextAvailable("",
@@ -315,7 +316,7 @@ public class SmsConversation extends Fragment {
 				String.format("Creating fragment with client id %s", clientId));
 		messenger = new Messenger(incomingHandler);
 		if (AppConstants.DB == 1) {
-			smsAccessor = new SmsDbHelper(act.getContentResolver());
+			smsAccessor = new DefaultSmsProviderHelper(act.getContentResolver());
 		} else {
 			smsAccessor = new CustomSmsDbHelper(act.getContentResolver());
 		}
@@ -325,10 +326,11 @@ public class SmsConversation extends Fragment {
 		smsList.setOnItemLongClickListener(itemLongClickListener);
 		info = (ConversationModel) getArguments().getSerializable(
 				EXTRA_CONVERSATION_INFO);
-		observer = new SmsContentObserver(smsThreadHandler);
-		act.getContentResolver().registerContentObserver(
-				Uri.withAppendedPath(SmsDbHelper.SMS_CONVERSATIONS_URI,
-						Long.toString(info.getThreadId())), true, observer);
+//		observer = new SmsContentObserver(smsThreadHandler);
+//		act.getContentResolver().registerContentObserver(
+//				Uri.withAppendedPath(
+//						DefaultSmsProviderHelper.SMS_CONVERSATIONS_URI,
+//						Long.toString(info.getThreadId())), true, observer);
 	}
 
 	public void updateItems(boolean reload) {
@@ -354,13 +356,15 @@ public class SmsConversation extends Fragment {
 	@Override
 	public void onActivityCreated(Bundle savedInstanceState) {
 		super.onActivityCreated(savedInstanceState);
-		act.bindService(new Intent(act, SendTaskService.class), connection,
-				Context.BIND_AUTO_CREATE);
-//		smsList.addFooterView(act.getLayoutInflater().inflate(R.layout.send_item, null));
+		// smsList.addFooterView(act.getLayoutInflater().inflate(R.layout.send_item,
+		// null));
 		updateItems(true);
 		bar.setVisibility(View.GONE);
 		smsList.setVisibility(View.VISIBLE);
 		shouldSendMessage = getArguments().getBoolean("send_now");
+		getArguments().putBoolean("send_now", false);
+		act.bindService(new Intent(act, SendTaskService.class), connection,
+				Context.BIND_AUTO_CREATE);
 	}
 
 	protected void sendFromMainScreen(SmsModel smsModel) {
@@ -420,7 +424,7 @@ public class SmsConversation extends Fragment {
 		} catch (RemoteException e) {
 			e.printStackTrace();
 		}
-		act.getContentResolver().unregisterContentObserver(observer);
+//		act.getContentResolver().unregisterContentObserver(observer);
 		act.unbindService(connection);
 		super.onDestroyView();
 	}
@@ -442,6 +446,7 @@ public class SmsConversation extends Fragment {
 	}
 
 	private void postDeleteMany(Intent data) {
+		Cache.delete(info.getThreadId());
 		Cache.addToRefreshSet(info.getThreadId(), false);
 		if (data.getIntExtra("items_left", 0) == 0) {
 			act.finish();

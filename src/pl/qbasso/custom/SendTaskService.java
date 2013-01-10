@@ -11,8 +11,9 @@ import java.util.regex.Matcher;
 import pl.qbasso.activities.AppConstants;
 import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.models.SmsModel;
+import pl.qbasso.sms.Cache;
 import pl.qbasso.sms.CustomSmsDbHelper;
-import pl.qbasso.sms.SmsDbHelper;
+import pl.qbasso.sms.DefaultSmsProviderHelper;
 import pl.qbasso.sms.SmsSendHelper;
 import android.app.Service;
 import android.content.Context;
@@ -292,7 +293,7 @@ public class SendTaskService extends Service {
 		super.onCreate();
 		mContext = this;
 		if (AppConstants.DB == 1) {
-			mDbHelper = new SmsDbHelper(getContentResolver());
+			mDbHelper = new DefaultSmsProviderHelper(getContentResolver());
 		} else {
 			mDbHelper = new CustomSmsDbHelper(getContentResolver());
 		}

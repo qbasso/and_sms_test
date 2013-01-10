@@ -8,7 +8,7 @@ import java.util.List;
 import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
-import pl.qbassso.smsdb.SmsProvider;
+import pl.qbassso.smsdb.CustomSmsProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;
@@ -17,15 +17,15 @@ import android.provider.ContactsContract.PhoneLookup;
 
 public class CustomSmsDbHelper implements ISmsAccess {
 	/** The Constant SMS_URI. */
-	public static final Uri SMS_URI = SmsProvider.SMS_URI;
+	public static final Uri SMS_URI = CustomSmsProvider.SMS_URI;
 	/** The Constant SMS_OUTBOX_URI. */
-	public static final Uri SMS_OUTBOX_URI = SmsProvider.SMS_OUTBOX_URI;
+	public static final Uri SMS_OUTBOX_URI = CustomSmsProvider.SMS_OUTBOX_URI;
 	/** The Constant SMS_INBOX_URI. */
-	public static final Uri SMS_INBOX_URI = SmsProvider.SMS_INBOX_URI;
+	public static final Uri SMS_INBOX_URI = CustomSmsProvider.SMS_INBOX_URI;
 	/** The Constant SMS_DRAFT_URI. */
-	public static final Uri SMS_DRAFT_URI = SmsProvider.SMS_DRAFT_URI;
+	public static final Uri SMS_DRAFT_URI = CustomSmsProvider.SMS_DRAFT_URI;
 	/** The Constant SMS_CONVERSATIONS_URI. */
-	public static final Uri SMS_CONVERSATIONS_URI = SmsProvider.CONVERSATION_CONTENT_URI;
+	public static final Uri SMS_CONVERSATIONS_URI = CustomSmsProvider.CONVERSATION_CONTENT_URI;
 	/** The Constant SMS_SORT_ORDER. */
 	public static final String SMS_SORT_ORDER = "date DESC";
 	/** The resolver. */
@@ -43,8 +43,8 @@ public class CustomSmsDbHelper implements ISmsAccess {
 	public int updateSmsStatus(long messageId, int smsStatus, int smsType) {
 		int result;
 		ContentValues values = new ContentValues();
-		values.put(SmsProvider.COLUMN_SMS_STATUS, smsStatus);
-		values.put(SmsProvider.COLUMN_SMS_TYPE, smsType);
+		values.put(CustomSmsProvider.COLUMN_SMS_STATUS, smsStatus);
+		values.put(CustomSmsProvider.COLUMN_SMS_TYPE, smsType);
 		result = resolver.update(
 				Uri.withAppendedPath(SMS_URI, Long.toString(messageId)),
 				values, null, null);
@@ -60,19 +60,19 @@ public class CustomSmsDbHelper implements ISmsAccess {
 	public Uri insertSms(SmsModel m) {
 		Uri result;
 		ContentValues values = new ContentValues();
-		values.put(SmsProvider.COLUMN_SMS_ADDRESS, m.getAddress());
-		values.put(SmsProvider.COLUMN_SMS_BODY, m.getBody());
-		values.put(SmsProvider.COLUMN_SMS_READ, m.getRead());
+		values.put(CustomSmsProvider.COLUMN_SMS_ADDRESS, m.getAddress());
+		values.put(CustomSmsProvider.COLUMN_SMS_BODY, m.getBody());
+		values.put(CustomSmsProvider.COLUMN_SMS_READ, m.getRead());
 		if (m.getDate() != 0) {
-			values.put(SmsProvider.COLUMN_SMS_DATE, m.getDate());
+			values.put(CustomSmsProvider.COLUMN_SMS_DATE, m.getDate());
 		} else {
-			values.put(SmsProvider.COLUMN_SMS_DATE, System.currentTimeMillis());
+			values.put(CustomSmsProvider.COLUMN_SMS_DATE, System.currentTimeMillis());
 		}
 		// if (m.getThreadId() != -1) {
-		values.put(SmsProvider.COLUMN_SMS_THREAD_ID, m.getThreadId());
+		values.put(CustomSmsProvider.COLUMN_SMS_THREAD_ID, m.getThreadId());
 		// }
-		values.put(SmsProvider.COLUMN_SMS_TYPE, m.getSmsType());
-		values.put(SmsProvider.COLUMN_SMS_STATUS, m.getStatus());
+		values.put(CustomSmsProvider.COLUMN_SMS_TYPE, m.getSmsType());
+		values.put(CustomSmsProvider.COLUMN_SMS_STATUS, m.getStatus());
 		result = resolver.insert(SMS_URI, values);
 		return result;
 	}
@@ -85,7 +85,7 @@ public class CustomSmsDbHelper implements ISmsAccess {
 	public long getThreadIdForSmsUri(Uri u) {
 		long result = 0;
 		Cursor c = resolver.query(u,
-				new String[] { SmsProvider.COLUMN_SMS_THREAD_ID }, null, null,
+				new String[] { CustomSmsProvider.COLUMN_SMS_THREAD_ID }, null, null,
 				null);
 		if (c != null) {
 			if (c.moveToNext()) {
@@ -103,8 +103,8 @@ public class CustomSmsDbHelper implements ISmsAccess {
 	public long getThreadIdForPhoneNumber(String phoneNumber) {
 		long result = -1;
 		Cursor c = resolver.query(SMS_URI,
-				new String[] { SmsProvider.COLUMN_SMS_THREAD_ID },
-				SmsProvider.COLUMN_SMS_ADDRESS + "= ?",
+				new String[] { CustomSmsProvider.COLUMN_SMS_THREAD_ID },
+				CustomSmsProvider.COLUMN_SMS_ADDRESS + "= ?",
 				new String[] { phoneNumber }, null);
 		if (c != null) {
 			if (c.moveToNext()) {
@@ -178,8 +178,8 @@ public class CustomSmsDbHelper implements ISmsAccess {
 	private String getPhoneNumber(long threadId) {
 		String phoneNumber = "";
 		Cursor c = resolver.query(SMS_URI,
-				new String[] { SmsProvider.COLUMN_SMS_ADDRESS },
-				SmsProvider.COLUMN_SMS_THREAD_ID + "= ?",
+				new String[] { CustomSmsProvider.COLUMN_SMS_ADDRESS },
+				CustomSmsProvider.COLUMN_SMS_THREAD_ID + "= ?",
 				new String[] { String.valueOf(threadId) }, null);
 		if (c != null) {
 			if (c.moveToNext()) {
@@ -203,27 +203,27 @@ public class CustomSmsDbHelper implements ISmsAccess {
 					SMS_SORT_ORDER);
 		} else if (needRefresh.size() > 0) {
 			c = resolver.query(SMS_CONVERSATIONS_URI, null,
-					SmsProvider.COLUMN_CONVERSATION_ID + " in "
+					CustomSmsProvider.COLUMN_CONVERSATION_ID + " in "
 							+ buildListofNamedParameters(needRefresh.size()),
 					buildListOfParameters(needRefresh), SMS_SORT_ORDER);
 		}
 		if (c != null) {
 			while (c.moveToNext()) {
 				ConversationModel m = new ConversationModel(
-						c.getLong(SmsProvider.sConversationProjectionMap
-								.get(SmsProvider.COLUMN_CONVERSATION_ID)),
-						c.getInt(SmsProvider.sConversationProjectionMap
-								.get(SmsProvider.COLUMN_CONVERSATION_COUNT)),
-						c.getString(SmsProvider.sConversationProjectionMap
-								.get(SmsProvider.COLUMN_CONVERSATION_SNIPPET)));
+						c.getLong(CustomSmsProvider.sConversationProjectionMap
+								.get(CustomSmsProvider.COLUMN_CONVERSATION_ID)),
+						c.getInt(CustomSmsProvider.sConversationProjectionMap
+								.get(CustomSmsProvider.COLUMN_CONVERSATION_COUNT)),
+						c.getString(CustomSmsProvider.sConversationProjectionMap
+								.get(CustomSmsProvider.COLUMN_CONVERSATION_SNIPPET)));
 				String phoneNumber = getPhoneNumber(m.getThreadId());
 				m.setLastModified(c
-						.getLong(SmsProvider.sConversationProjectionMap
-								.get(SmsProvider.COLUMN_CONVERSATION_DATE)));
-				m.setUnread(c.getInt(SmsProvider.sConversationProjectionMap
-						.get(SmsProvider.COLUMN_CONVERSATION_UNREAD)));
-				m.setDraft(c.getInt(SmsProvider.sConversationProjectionMap
-						.get(SmsProvider.COLUMN_CONVERSATION_DRAFT)) > 0 ? true
+						.getLong(CustomSmsProvider.sConversationProjectionMap
+								.get(CustomSmsProvider.COLUMN_CONVERSATION_DATE)));
+				m.setUnread(c.getInt(CustomSmsProvider.sConversationProjectionMap
+						.get(CustomSmsProvider.COLUMN_CONVERSATION_UNREAD)));
+				m.setDraft(c.getInt(CustomSmsProvider.sConversationProjectionMap
+						.get(CustomSmsProvider.COLUMN_CONVERSATION_DRAFT)) > 0 ? true
 						: false);
 				String displayName = getDisplayName(phoneNumber);
 				m.setAddress(phoneNumber);
@@ -266,13 +266,13 @@ public class CustomSmsDbHelper implements ISmsAccess {
 		List<SmsModel> result = new ArrayList<SmsModel>();
 		Cursor c = resolver.query(
 				SMS_URI,
-				new String[] { SmsProvider.COLUMN_SMS_ID,
-						SmsProvider.COLUMN_SMS_BODY,
-						SmsProvider.COLUMN_SMS_ADDRESS,
-						SmsProvider.COLUMN_SMS_DATE,
-						SmsProvider.COLUMN_SMS_TYPE,
-						SmsProvider.COLUMN_SMS_READ,
-						SmsProvider.COLUMN_SMS_STATUS },
+				new String[] { CustomSmsProvider.COLUMN_SMS_ID,
+						CustomSmsProvider.COLUMN_SMS_BODY,
+						CustomSmsProvider.COLUMN_SMS_ADDRESS,
+						CustomSmsProvider.COLUMN_SMS_DATE,
+						CustomSmsProvider.COLUMN_SMS_TYPE,
+						CustomSmsProvider.COLUMN_SMS_READ,
+						CustomSmsProvider.COLUMN_SMS_STATUS },
 				SmsModel.THREAD_ID + "=? and " + SmsModel.TYPE + " <> ?",
 				new String[] { String.valueOf(threadId),
 						String.valueOf(SmsModel.MESSAGE_TYPE_DRAFT) },
@@ -291,14 +291,14 @@ public class CustomSmsDbHelper implements ISmsAccess {
 	public List<SmsModel> getAllSms() {
 		List<SmsModel> result = new ArrayList<SmsModel>();
 		Cursor c = resolver.query(SMS_URI,
-				new String[] { SmsProvider.COLUMN_SMS_ID,
-						SmsProvider.COLUMN_SMS_BODY,
-						SmsProvider.COLUMN_SMS_ADDRESS,
-						SmsProvider.COLUMN_SMS_DATE,
-						SmsProvider.COLUMN_SMS_TYPE,
-						SmsProvider.COLUMN_SMS_READ,
-						SmsProvider.COLUMN_SMS_STATUS,
-						SmsProvider.COLUMN_SMS_THREAD_ID }, SmsModel.TYPE
+				new String[] { CustomSmsProvider.COLUMN_SMS_ID,
+						CustomSmsProvider.COLUMN_SMS_BODY,
+						CustomSmsProvider.COLUMN_SMS_ADDRESS,
+						CustomSmsProvider.COLUMN_SMS_DATE,
+						CustomSmsProvider.COLUMN_SMS_TYPE,
+						CustomSmsProvider.COLUMN_SMS_READ,
+						CustomSmsProvider.COLUMN_SMS_STATUS,
+						CustomSmsProvider.COLUMN_SMS_THREAD_ID }, SmsModel.TYPE
 						+ " <> ?",
 				new String[] { String.valueOf(SmsModel.MESSAGE_TYPE_DRAFT) },
 				"date ASC");
@@ -320,11 +320,11 @@ public class CustomSmsDbHelper implements ISmsAccess {
 	 */
 	public SmsModel getSingleSms(Uri u) {
 		SmsModel result = null;
-		Cursor c = resolver.query(u, new String[] { SmsProvider.COLUMN_SMS_ID,
-				SmsProvider.COLUMN_SMS_BODY, SmsProvider.COLUMN_SMS_ADDRESS,
-				SmsProvider.COLUMN_SMS_DATE, SmsProvider.COLUMN_SMS_TYPE,
-				SmsProvider.COLUMN_SMS_READ, SmsProvider.COLUMN_SMS_THREAD_ID,
-				SmsProvider.COLUMN_SMS_STATUS }, null, null, null);
+		Cursor c = resolver.query(u, new String[] { CustomSmsProvider.COLUMN_SMS_ID,
+				CustomSmsProvider.COLUMN_SMS_BODY, CustomSmsProvider.COLUMN_SMS_ADDRESS,
+				CustomSmsProvider.COLUMN_SMS_DATE, CustomSmsProvider.COLUMN_SMS_TYPE,
+				CustomSmsProvider.COLUMN_SMS_READ, CustomSmsProvider.COLUMN_SMS_THREAD_ID,
+				CustomSmsProvider.COLUMN_SMS_STATUS }, null, null, null);
 		if (c != null) {
 			if (c.moveToNext()) {
 				result = new SmsModel(c.getLong(0), c.getLong(6),

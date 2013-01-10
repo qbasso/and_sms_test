@@ -15,7 +15,7 @@ import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.Cache;
 import pl.qbasso.sms.CustomSmsDbHelper;
-import pl.qbasso.sms.SmsDbHelper;
+import pl.qbasso.sms.DefaultSmsProviderHelper;
 import pl.qbasso.sms.SmsLengthWatcher;
 import pl.qbasso.sms.SmsReceiver;
 import pl.qbasso.sms.SmsSendHelper;
@@ -155,7 +155,7 @@ public class SmsConversationActivity extends FragmentActivity implements
 		ctx = this;
 		nm = (NotificationManager) getSystemService(Activity.NOTIFICATION_SERVICE);
 		if (AppConstants.DB == 1) {
-			helper = new SmsDbHelper(getContentResolver());
+			helper = new DefaultSmsProviderHelper(getContentResolver());
 		} else {
 			helper = new CustomSmsDbHelper(getContentResolver());
 		}

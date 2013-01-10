@@ -63,7 +63,7 @@ public class SmsReceiver extends BroadcastReceiver {
 		String previousOriginatingAddress = null;
 		if (smsDb == null) {
 			if (AppConstants.DB == 1) {
-				smsDb = new SmsDbHelper(ctx.getContentResolver());
+				smsDb = new DefaultSmsProviderHelper(ctx.getContentResolver());
 			} else {
 				smsDb = new CustomSmsDbHelper(ctx.getContentResolver());
 			}
@@ -229,7 +229,7 @@ public class SmsReceiver extends BroadcastReceiver {
 			AlarmManager am = (AlarmManager) ctx
 					.getSystemService(Activity.ALARM_SERVICE);
 			am.set(AlarmManager.RTC,
-					System.currentTimeMillis() + 1000 * 15,
+					System.currentTimeMillis() + 1000 * 60 * 3,
 					cancelLightIntent);
 			n.flags |= Notification.FLAG_SHOW_LIGHTS;
 			n.ledARGB = 0x004800ff;

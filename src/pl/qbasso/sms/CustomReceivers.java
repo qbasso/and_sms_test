@@ -99,7 +99,7 @@ public class CustomReceivers {
 			SmsModel m;
 			ISmsAccess smsAccessor;
 			if (AppConstants.DB == 1) {
-				smsAccessor = new SmsDbHelper(arg0.getContentResolver());
+				smsAccessor = new DefaultSmsProviderHelper(arg0.getContentResolver());
 			} else {
 				smsAccessor = new CustomSmsDbHelper(arg0.getContentResolver());
 			}
@@ -152,7 +152,7 @@ public class CustomReceivers {
 			SmsModel m;
 			ISmsAccess smsAccessor;
 			if (AppConstants.DB == 1) {
-				smsAccessor = new SmsDbHelper(arg0.getContentResolver());
+				smsAccessor = new DefaultSmsProviderHelper(arg0.getContentResolver());
 			} else {
 				smsAccessor = new CustomSmsDbHelper(arg0.getContentResolver());
 			}

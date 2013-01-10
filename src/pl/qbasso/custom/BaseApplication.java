@@ -7,7 +7,7 @@ import pl.qbasso.activities.AppConstants;
 import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.sms.Cache;
 import pl.qbasso.sms.CustomSmsDbHelper;
-import pl.qbasso.sms.SmsDbHelper;
+import pl.qbasso.sms.DefaultSmsProviderHelper;
 import android.app.Application;
 import android.content.SharedPreferences;
 
@@ -21,8 +21,8 @@ public class BaseApplication extends Application {
 		Cache.getInstance();
 		SharedPreferences pref = getSharedPreferences(AppConstants.SHARED_PREF_FILE, MODE_PRIVATE);
 		AppConstants.DB = pref.getInt("db", 1);
-		ISmsAccess h = new SmsDbHelper(getContentResolver());
-		if (!((SmsDbHelper)h).isProviderAvailable()) {
+		ISmsAccess h = new DefaultSmsProviderHelper(getContentResolver());
+		if (!((DefaultSmsProviderHelper)h).isProviderAvailable()) {
 			pref.edit().putInt("db", 0);
 			AppConstants.DB = 0;
 		}

@@ -5,7 +5,7 @@ import java.util.List;
 import pl.qbasso.interfaces.ContentNeedRefreshListener;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.sms.Cache;
-import pl.qbasso.sms.SmsDbHelper;
+import pl.qbasso.sms.DefaultSmsProviderHelper;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -21,7 +21,7 @@ public class ConversationLoader extends
 		AsyncTaskLoader<List<ConversationModel>> implements
 		ContentNeedRefreshListener {
 
-	private SmsDbHelper mHelper;
+	private DefaultSmsProviderHelper mHelper;
 	private List<ConversationModel> mItems = null;
 	private ConversationChangedReceiver mChangeWatcher = null;
 	private boolean mRefreshMode = false;
@@ -47,7 +47,7 @@ public class ConversationLoader extends
 
 	public ConversationLoader(Context context) {
 		super(context);
-		mHelper = new SmsDbHelper(context.getContentResolver());
+		mHelper = new DefaultSmsProviderHelper(context.getContentResolver());
 		Cache.getInstance();
 	}
 

@@ -22,7 +22,7 @@ import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.sms.Cache;
 import pl.qbasso.sms.CustomSmsDbHelper;
-import pl.qbasso.sms.SmsDbHelper;
+import pl.qbasso.sms.DefaultSmsProviderHelper;
 import pl.qbasso.sms.SmsLengthWatcher;
 import pl.qbasso.sms.SmsReceiver;
 import pl.qbasso.sms.SmsSendHelper;
@@ -510,7 +510,7 @@ public class ConversationList extends FragmentActivity implements
 		mViewFlipper.setInAnimation(ctx, android.R.anim.slide_in_left);
 		mViewFlipper.setOutAnimation(ctx, android.R.anim.slide_out_right);
 		if (AppConstants.DB == 1) {
-			smsAccessor = new SmsDbHelper(getContentResolver());
+			smsAccessor = new DefaultSmsProviderHelper(getContentResolver());
 		} else {
 			smsAccessor = new CustomSmsDbHelper(getContentResolver());
 		}

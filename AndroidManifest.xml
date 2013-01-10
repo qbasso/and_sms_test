@@ -71,7 +71,7 @@
         </service>
 
         <provider
-            android:name="pl.qbassso.smsdb.SmsProvider"
+            android:name="pl.qbassso.smsdb.CustomSmsProvider"
             android:authorities="pl.qbasso.smsdb.SmsProvider"
             android:exported="false" >
         </provider>

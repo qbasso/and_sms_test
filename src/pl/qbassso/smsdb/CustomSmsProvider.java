@@ -12,7 +12,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 
-public class SmsProvider extends ContentProvider {
+public class CustomSmsProvider extends ContentProvider {
 
 	private static UriMatcher sMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 	private SmsDatabaseHelper mDb;

@@ -3,7 +3,7 @@ package pl.qbasso.custom;
 import pl.qbasso.activities.AppConstants;
 import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.sms.CustomSmsDbHelper;
-import pl.qbasso.sms.SmsDbHelper;
+import pl.qbasso.sms.DefaultSmsProviderHelper;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
@@ -85,7 +85,7 @@ public class BackupAsyncTask extends AsyncTask<String, Integer, Integer> {
 		ISmsAccess smsDb;
 
 		if (AppConstants.DB == 1) {
-			smsDb = new SmsDbHelper(mContext.getContentResolver());
+			smsDb = new DefaultSmsProviderHelper(mContext.getContentResolver());
 		} else {
 			smsDb = new CustomSmsDbHelper(mContext.getContentResolver());
 		}
