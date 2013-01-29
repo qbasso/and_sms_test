@@ -1,7 +1,7 @@
 /*
  * @author JPorzuczek
  */
-package pl.qbasso.sms;
+package pl.qbassso.smsdb;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -88,16 +88,16 @@ public class DefaultSmsProviderHelper implements ISmsAccess {
 		}
 		if (m.getThreadId() != -1) {
 			values.put(SmsModel.THREAD_ID, m.getThreadId());
-		}
+		}	
 		if (m.getId() > 0) {
 			values.put(SmsModel.ID, m.getId());
 		}
 		values.put(SmsModel.TYPE, m.getSmsType());
 		values.put(SmsModel.STATUS, m.getStatus());
 		result = resolver.insert(SMS_URI, values);
-//		resolver.notifyChange(
-//				Uri.withAppendedPath(SMS_CONVERSATIONS_URI,
-//						String.valueOf(m.getThreadId())), null);
+		// resolver.notifyChange(
+		// Uri.withAppendedPath(SMS_CONVERSATIONS_URI,
+		// String.valueOf(m.getThreadId())), null);
 		return result;
 	}
 

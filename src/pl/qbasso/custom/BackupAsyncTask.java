@@ -2,8 +2,8 @@ package pl.qbasso.custom;
 
 import pl.qbasso.activities.AppConstants;
 import pl.qbasso.interfaces.ISmsAccess;
-import pl.qbasso.sms.CustomSmsDbHelper;
-import pl.qbasso.sms.DefaultSmsProviderHelper;
+import pl.qbassso.smsdb.CustomSmsDbHelper;
+import pl.qbassso.smsdb.DefaultSmsProviderHelper;
 import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;

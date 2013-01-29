@@ -6,8 +6,8 @@ import org.acra.annotation.ReportsCrashes;
 import pl.qbasso.activities.AppConstants;
 import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.sms.Cache;
-import pl.qbasso.sms.CustomSmsDbHelper;
-import pl.qbasso.sms.DefaultSmsProviderHelper;
+import pl.qbassso.smsdb.CustomSmsDbHelper;
+import pl.qbassso.smsdb.DefaultSmsProviderHelper;
 import android.app.Application;
 import android.content.SharedPreferences;
 

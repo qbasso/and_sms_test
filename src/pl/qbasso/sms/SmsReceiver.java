@@ -12,6 +12,8 @@ import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
 import pl.qbasso.smssender.R;
+import pl.qbassso.smsdb.CustomSmsDbHelper;
+import pl.qbassso.smsdb.DefaultSmsProviderHelper;
 import android.app.Activity;
 import android.app.AlarmManager;
 import android.app.Notification;

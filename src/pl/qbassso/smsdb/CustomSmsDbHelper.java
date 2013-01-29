@@ -1,4 +1,4 @@
-package pl.qbasso.sms;
+package pl.qbassso.smsdb;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -8,7 +8,6 @@ import java.util.List;
 import pl.qbasso.interfaces.ISmsAccess;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.models.SmsModel;
-import pl.qbassso.smsdb.CustomSmsProvider;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.database.Cursor;

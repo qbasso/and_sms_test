@@ -5,7 +5,7 @@ import java.util.List;
 import pl.qbasso.interfaces.ContentNeedRefreshListener;
 import pl.qbasso.models.ConversationModel;
 import pl.qbasso.sms.Cache;
-import pl.qbasso.sms.DefaultSmsProviderHelper;
+import pl.qbassso.smsdb.DefaultSmsProviderHelper;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
